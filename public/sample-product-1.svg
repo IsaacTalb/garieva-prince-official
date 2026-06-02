@@ -1,0 +1,25 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#111111"/>
+  <rect x="80" y="80" width="1040" height="1440" rx="32" fill="#1A1A1A" stroke="#575757" stroke-width="2"/>
+  <rect x="160" y="160" width="880" height="980" rx="24" fill="url(#grad1)"/>
+  <rect x="220" y="1220" width="320" height="36" rx="18" fill="#2D2D2D"/>
+  <rect x="220" y="1288" width="220" height="20" rx="10" fill="#575757"/>
+  <rect x="220" y="1348" width="160" height="56" rx="28" fill="#F2F2F2"/>
+  <text x="270" y="1385" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">SHOP</text>
+  <path d="M410 460C500 300 700 260 820 340C940 420 980 650 860 800C740 950 520 980 390 860C260 740 250 610 410 460Z" fill="url(#grad2)" fill-opacity="0.95"/>
+  <circle cx="760" cy="560" r="150" fill="#E5E7EB" fill-opacity="0.18"/>
+  <circle cx="470" cy="760" r="110" fill="#D1D5DB" fill-opacity="0.18"/>
+  <text x="220" y="1180" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700">GARIEVA</text>
+  <defs>
+    <linearGradient id="grad1" x1="160" y1="160" x2="1040" y2="1140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D2D2D"/>
+      <stop offset="0.5" stop-color="#575757"/>
+      <stop offset="1" stop-color="#111111"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="330" y1="320" x2="900" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E5E7EB"/>
+      <stop offset="0.5" stop-color="#9CA3AF"/>
+      <stop offset="1" stop-color="#575757"/>
+    </linearGradient>
+  </defs>
+</svg>

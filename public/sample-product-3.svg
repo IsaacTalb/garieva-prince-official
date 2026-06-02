@@ -1,0 +1,23 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#101010"/>
+  <rect x="90" y="90" width="1020" height="1420" rx="34" fill="#181818" stroke="#4B4B4B" stroke-width="2"/>
+  <rect x="150" y="150" width="900" height="980" rx="28" fill="url(#grad1)"/>
+  <path d="M580 350C760 320 920 450 920 640C920 830 750 980 540 980C390 980 250 890 250 700C250 540 360 390 580 350Z" fill="url(#grad2)"/>
+  <path d="M575 445C650 445 710 505 710 580V735C710 810 650 870 575 870C500 870 440 810 440 735V580C440 505 500 445 575 445Z" fill="#F9FAFB" fill-opacity="0.2"/>
+  <text x="190" y="1210" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="700">ESSENTIAL</text>
+  <rect x="190" y="1240" width="280" height="24" rx="12" fill="#2D2D2D"/>
+  <rect x="190" y="1298" width="188" height="52" rx="26" fill="#F3F4F6"/>
+  <text x="246" y="1331" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">DROP</text>
+  <defs>
+    <linearGradient id="grad1" x1="150" y1="150" x2="1050" y2="1130" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#575757"/>
+      <stop offset="0.5" stop-color="#1B1B1B"/>
+      <stop offset="1" stop-color="#2D2D2D"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="280" y1="380" x2="910" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E5E7EB"/>
+      <stop offset="0.45" stop-color="#9CA3AF"/>
+      <stop offset="1" stop-color="#575757"/>
+    </linearGradient>
+  </defs>
+</svg>
