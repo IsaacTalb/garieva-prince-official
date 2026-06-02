@@ -1,5 +1,6 @@
 "use client";
 
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { useMemo, useState, type MouseEvent } from "react";
 
@@ -146,15 +147,33 @@ export default function Home() {
             </h1>
 
             <nav className="hidden items-center gap-5 lg:flex xl:gap-6" aria-label="Primary right navigation">
-              {navItems.slice(3).map((item) => (
-                <button
-                  key={item}
-                  className="nav-link text-xs font-black uppercase tracking-wide text-white underline decoration-white/80 underline-offset-4"
-                  type="button"
-                >
-                  {item}
-                </button>
-              ))}
+              {navItems.slice(3).map((item) =>
+                item === "Sign In" ? (
+                  <div key={item} className="flex items-center">
+                    <SignedOut>
+                      <SignInButton mode="modal">
+                        <button
+                          className="nav-link text-xs font-black uppercase tracking-wide text-white underline decoration-white/80 underline-offset-4"
+                          type="button"
+                        >
+                          Sign In
+                        </button>
+                      </SignInButton>
+                    </SignedOut>
+                    <SignedIn>
+                      <UserButton afterSignOutUrl="/" />
+                    </SignedIn>
+                  </div>
+                ) : (
+                  <button
+                    key={item}
+                    className="nav-link text-xs font-black uppercase tracking-wide text-white underline decoration-white/80 underline-offset-4"
+                    type="button"
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
             </nav>
 
             <button
@@ -193,17 +212,39 @@ export default function Home() {
             }`}
           >
             <nav className="grid gap-2 p-4" aria-label="Mobile navigation">
-              {navItems.map((item, index) => (
-                <button
-                  key={item}
-                  className="mobile-nav-link rounded-full px-4 py-3 text-left text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{ animationDelay: `${index * 55}ms` }}
-                  type="button"
-                >
-                  {item}
-                </button>
-              ))}
+              {navItems.map((item, index) =>
+                item === "Sign In" ? (
+                  <div key={item} className="mobile-nav-link" style={{ animationDelay: `${index * 55}ms` }}>
+                    <SignedOut>
+                      <SignInButton mode="modal">
+                        <button
+                          className="w-full rounded-full px-4 py-3 text-left text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
+                          onClick={() => setIsMenuOpen(false)}
+                          type="button"
+                        >
+                          Sign In
+                        </button>
+                      </SignInButton>
+                    </SignedOut>
+                    <SignedIn>
+                      <div className="flex items-center justify-between rounded-full px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-white">
+                        Account
+                        <UserButton afterSignOutUrl="/" />
+                      </div>
+                    </SignedIn>
+                  </div>
+                ) : (
+                  <button
+                    key={item}
+                    className="mobile-nav-link rounded-full px-4 py-3 text-left text-sm font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{ animationDelay: `${index * 55}ms` }}
+                    type="button"
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
             </nav>
           </div>
         </header>
