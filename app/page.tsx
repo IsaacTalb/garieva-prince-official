@@ -104,12 +104,12 @@ export default function Home() {
           <div className="grid w-full grid-cols-6 items-end gap-2 md:gap-4">
 
             {[
-              "/hero-image/hero-1.png",
-              "/hero-image/hero-2.png",
-              "/hero-image/hero-3.png",
-              "/hero-image/hero-4.png",
-              "/hero-image/hero-5.png",
-              "/hero-image/hero-6.png",
+              "/hero-image/hero-1.webp",
+              "/hero-image/hero-2.webp",
+              "/hero-image/hero-3.webp",
+              "/hero-image/hero-4.webp",
+              "/hero-image/hero-5.webp",
+              "/hero-image/hero-6.webp",
             ].map((image, index) => (
               <div
                 key={index}
