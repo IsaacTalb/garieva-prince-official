@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root { --background: #f5f1e9; --foreground: #292520; --muted: #686159; --accent: #401b25; --line: #d7d0c5; }
+@theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --color-accent: var(--accent); --font-sans: Arial, Helvetica, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 5px; }
+button { font: inherit; cursor: pointer; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+::selection { background: var(--accent); color: var(--background); }
+.skip-link { position: absolute; top: -100px; left: 20px; background: var(--background); padding: 16px; z-index: 20; }
+.skip-link:focus { top: 12px; }
+.site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px 5vw; border-bottom: 1px solid var(--line); }
+.wordmark { font-weight: 700; font-size: 17px; letter-spacing: .1em; }
+.site-header nav { display: flex; gap: 30px; font-size: 12px; }
+.account-link { margin-left: 20px; }
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; min-height: 670px; }
+.hero-copy { padding: 90px 5vw 40px; display: flex; flex-direction: column; align-items: flex-start; }
+.eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: 10px; line-height: 1.7; font-weight: 600; }
+h1, h2, p { margin-top: 0; }
+.hero h1, .page-intro h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(56px, 6.8vw, 112px); font-weight: 400; line-height: 1.02; letter-spacing: -.065em; margin: 38px 0 28px; }
+em { font-weight: 400; }
+.hero-description { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 32px; }
+.primary-link { display: inline-flex; align-items: center; gap: 45px; background: var(--accent); border: 1px solid var(--accent); color: var(--background); padding: 17px 22px; font-size: 12px; }
+.hero-caption { margin-top: auto; padding-top: 50px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.brand-panel { background: var(--accent); color: #e6d9cb; margin: 28px 28px 28px 0; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 32px; }
+.panel-top, .panel-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: 9px; letter-spacing: .13em; text-transform: uppercase; z-index: 1; }
+.monogram { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: clamp(140px, 26vw, 430px); letter-spacing: -.13em; padding-right: .12em; opacity: .85; }
+.monogram span { font-style: italic; margin-left: -.08em; }
+.brand-panel::after { content: ""; position: absolute; inset: 18px; border: 1px solid #e6d9cb38; }
+.manifesto { display: grid; grid-template-columns: .65fr 1.3fr 1fr; gap: 40px; padding: 95px 5vw; border-block: 1px solid var(--line); }
+.manifesto h2 { font-family: Georgia, serif; font-size: clamp(34px, 4vw, 65px); font-weight: 400; letter-spacing: -.045em; line-height: 1.1; }
+.manifesto-copy p { font-size: 13px; line-height: 1.9; color: var(--muted); }
+.text-link { display: inline-block; font-size: 12px; border-bottom: 1px solid currentColor; padding-bottom: 6px; margin-top: 16px; }
+.house-paths { display: grid; grid-template-columns: 1fr 1fr; }
+.house-paths > a { padding: 50px 5vw; border-bottom: 1px solid var(--line); }
+.house-paths > a:first-child { border-right: 1px solid var(--line); }
+.house-paths h2 { font: 400 34px Georgia, serif; margin: 22px 0 12px; }
+.house-paths p { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.site-footer { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 30px; padding: 45px 5vw; }
+.site-footer p:not(.wordmark), .site-footer small { font-size: 11px; color: var(--muted); }
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 24px; font-size: 12px; }
+.page-intro { padding: 80px 5vw 50px; max-width: 1150px; }
+.page-intro h1 { font-size: clamp(48px, 6vw, 88px); margin-top: 28px; }
+.intro-copy { max-width: 540px; color: var(--muted); font-size: 15px; line-height: 1.8; }
+.page-content { padding: 20px 5vw 80px; min-height: 300px; }
+.empty-state { padding: 60px 24px; border-block: 1px solid var(--line); text-align: center; }
+.edition-mark { display: inline-block; font: italic 42px Georgia, serif; color: var(--accent); margin-bottom: 24px; }
+.empty-state h2, .content-card h2 { font: 400 30px Georgia, serif; letter-spacing: -.02em; }
+.empty-state p, .content-card p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+.content-card { padding: 35px; border: 1px solid var(--line); max-width: 800px; }
+.catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; }
+@media (min-width: 1600px) { body { max-width: 1800px; margin-inline: auto; } }
+@media (max-width: 900px) { .site-header { flex-direction: column; align-items: flex-start; } .site-header nav { flex-wrap: wrap; gap: 20px; } .account-link { margin-left: 0; } .hero { min-height: 0; } .hero-copy { padding-top: 60px; } .brand-panel { margin: 20px 20px 20px 0; padding: 24px; } .panel-top, .panel-bottom { flex-direction: column; gap: 8px; } .manifesto { grid-template-columns: 1fr 1.5fr; gap: 24px; } .manifesto > .eyebrow { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .site-header { padding: 24px 6vw; gap: 18px; } .site-header nav { gap: 14px; font-size: 11px; } .wordmark { font-size: 15px; } .hero { grid-template-columns: 1fr; } .hero-copy { padding: 55px 6vw 30px; } .hero h1 { font-size: 68px; margin-top: 26px; } .hero-caption { padding-top: 40px; } .brand-panel { height: 360px; margin: 0 6vw 35px; } .monogram { font-size: 230px; } .panel-top, .panel-bottom { flex-direction: row; font-size: 8px; } .manifesto { display: block; padding: 50px 6vw; } .manifesto h2 { font-size: 44px; margin: 26px 0; } .house-paths { grid-template-columns: 1fr; } .house-paths > a { padding: 35px 6vw; } .house-paths > a:first-child { border-right: 0; } .page-intro { padding: 55px 6vw 30px; } .page-content { padding: 20px 6vw 50px; } .content-card { padding: 25px; } .site-footer { padding: 35px 6vw; } }
