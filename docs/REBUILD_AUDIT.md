@@ -6,8 +6,10 @@ The working tree was clean before removal. The original complete commit is
 `794f465598ee6e4caee0c2d78ac61c72ec4ff340`, preserved by the local branch
 `legacy/pre-rebuild`. `.git` and existing history remain intact. No reset,
 history rewrite, remote deletion, push, or production data mutation was performed.
-The rebuild remains reviewable as working-tree changes on the existing `work`
-branch. The backup branch has not been published remotely.
+The initial rebuild was created on the existing `work` branch, then committed
+and pushed as `codex/garieva-prince-foundation` at the user's request. The backup
+branch was also pushed. The subsequent UI update follows the user's explicit
+authorization to match the reference layout, while retaining GP content/auth.
 
 Inspected all tracked application source, APIs, libraries, types, configuration,
 agent instructions, documentation, history, and static-asset inventory before

@@ -3,6 +3,7 @@ import { AccessError, requireAdmin } from "@/lib/auth/session";
 import { isAuthConfigured } from "@/lib/auth/client";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -14,5 +15,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (error instanceof AccessError) notFound();
     throw error;
   }
-  return children;
+  return <AdminShell>{children}</AdminShell>;
 }

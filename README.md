@@ -49,3 +49,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Implementation plan](docs/IMPLEMENTAT
 and [Rebuild audit](docs/REBUILD_AUDIT.md). The original implementation remains in
 Git history and local `legacy/pre-rebuild`; history was not rewritten and no
 branch was pushed by this phase.
+
+The storefront now follows the requested reference UI layout while retaining GP
+branding, Auth0, and server-side authorization. See [UI alignment](docs/UI_ALIGNMENT.md)
+for scope and the remaining content/integration requirements.

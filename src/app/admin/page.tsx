@@ -16,5 +16,5 @@ export default async function AdminPage() {
     if (error instanceof AccessError) notFound();
     throw error;
   }
-  return <><PageIntro eyebrow="Garieva Prince operations" title="The house, behind the scenes."><p>A dedicated space for authorized administrators.</p></PageIntro><section className="page-content"><FoundationStatus /></section></>;
+  return <><PageIntro eyebrow="Garieva Prince operations" title="Dashboard"><p>A dedicated space for authorized administrators.</p></PageIntro><section className="page-content"><FoundationStatus /></section></>;
 }

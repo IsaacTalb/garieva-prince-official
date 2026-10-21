@@ -35,5 +35,7 @@ export const publicProductSchema = z.object({
   name: z.string(),
   slug: slugSchema,
   description: z.string(),
+  image_url: z.url().nullable().default(null),
+  image_alt: z.string().nullable().default(null),
 });
 export type PublicProduct = z.infer<typeof publicProductSchema>;

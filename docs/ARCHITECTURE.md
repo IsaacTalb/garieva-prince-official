@@ -13,13 +13,15 @@ server-only application identity and administrator resolution; public catalog
 read repository; Zod boundaries; separate-bucket R2 signing primitives; identity
 and catalog migrations; CI and isolated PostgreSQL tests.
 
-Deferred: catalog management/details, collection/drop publication, archive
-pricing, cart, checkout, orders, payment review, inventory ledger, email,
+Product detail reads and searchable catalog presentation are available. Cart,
+wishlist, checkout, and admin sections have presentation-only unavailable states.
+Deferred: catalog management, collection/drop publication, archive pricing,
+commerce mutations, orders, payment review, inventory ledger, email,
 NFC verification, ownership claims/transfers, and resale.
 
 ## Stack and boundaries
 
-Next.js 16.2.10 App Router, React 19.2.4, TypeScript, Tailwind CSS 4, Auth0 Next.js
+Next.js 16.2.10 App Router, React 19.2.4, TypeScript, Tailwind CSS 4, Lucide icons, Auth0 Next.js
 SDK 4, PostgreSQL through `postgres`, AWS S3 SDK for R2, and Zod 4. Real dependency
 types replace ambient vendor stubs. Add shadcn/ui when accessible forms/dialogs
 warrant it; no unused component suite is installed in the foundation.
@@ -48,8 +50,9 @@ tests/               validation and isolated PostgreSQL invariants
 docs/                architecture, phase plan, rebuild audit
 ```
 
-Pages/layouts are Server Components. Only the Next.js error boundary is a Client
-Component in this release. Future cart/forms should add interactive islands.
+Pages/layouts are Server Components. Client islands handle the responsive header,
+route-aware footer, admin navigation, and Next.js error boundary. Database and
+authorization checks remain on the server.
 `server-only` prevents session, database, and R2 modules entering client bundles.
 
 ## Auth0 and application identity
@@ -138,7 +141,7 @@ after securely provisioning the actual runtime role:
 
 ```sql
 grant usage on schema public to garieva_runtime;
-grant select on public.users, public.user_roles, public.products to garieva_runtime;
+grant select on public.users, public.user_roles, public.products, public.product_media to garieva_runtime;
 grant insert (auth0_sub, email, display_name) on public.users to garieva_runtime;
 grant update (auth0_sub) on public.users to garieva_runtime;
 ```
@@ -217,3 +220,24 @@ Vercel builds. CI checks frozen install, lint, type generation/check, isolated
 PostgreSQL/schema tests, and a credential-free production build. Live Auth0,
 Supabase TLS/permissions, R2 uploads, browser interaction, and deployment remain
 integration checks before production launch.
+
+## Storefront UI alignment
+
+At the user's request, the presentation now follows the reference UI: fixed
+48px glass header, centered GP wordmark, desktop shop dropdown and action icons,
+mobile modal navigation/search, full-screen collection hero, floating product
+showcase, white surfaces, Helvetica/Arial typography, rounded cards/buttons,
+brand signoff, and four-column footer. The earlier cream/burgundy editorial
+layout was removed. Reference branding, proprietary font files, photographs,
+product data, contacts, authentication, and API implementation were not imported.
+
+No GP campaign photograph is configured, so the hero uses the reference's dark
+gradient fallback. Real published GP products use the existing product-media
+relation and configured R2 public base URL, not sample merchandise. Missing
+photography gets an explicit placeholder. Search is parameterized on the server.
+The public catalog query now needs SELECT on product_media as well as products.
+
+Admin pages reuse the sidebar/top-bar layout only after server-side authorization;
+unimplemented sections do not expose mutation controls or invented metrics.
+Account details stay server-rendered and read-only. Checkout does not collect
+payment details or create orders; all purchasing controls remain disabled.

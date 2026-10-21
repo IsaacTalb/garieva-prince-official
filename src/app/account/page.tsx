@@ -11,5 +11,5 @@ export const metadata = { title: "Your account" };
 export default async function AccountPage() {
   if (!isAuthConfigured() || !isDatabaseConfigured()) return <div className="page-content"><EmptyState title="Account access is coming." description="Sign-in is temporarily unavailable. Please return soon." /></div>;
   const user = await requirePageUser();
-  return <><PageIntro eyebrow="Your space" title="Welcome to the house."><p>A personal place for your Garieva Prince story.</p></PageIntro><section className="page-content"><AccountSummary user={user} /></section></>;
+  return <><PageIntro eyebrow="Garieva Prince" title="My Account"><p>Your profile and your personal wardrobe.</p></PageIntro><section className="page-content"><AccountSummary user={user} /></section></>;
 }
