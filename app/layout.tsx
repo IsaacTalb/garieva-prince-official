@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Garieva Prince Official",
-  description: "Minimal clothing brand storefront rebuilt with Next.js.",
+  title: "Garieva Prince",
+  description: "Garieva Prince — official store and digital ownership platform.",
 };
 
 export default function RootLayout({
@@ -14,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <ClerkProvider>{children}</ClerkProvider>
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
