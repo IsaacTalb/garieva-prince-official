@@ -6,46 +6,33 @@ function requireEnv(keys: readonly string[]) {
   }
 }
 
-const supabaseEnvKeys = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] as const;
-const r2EnvKeys = [
-  "R2_ACCOUNT_ID",
-  "R2_ACCESS_KEY_ID",
-  "R2_SECRET_ACCESS_KEY",
-  "R2_BUCKET_NAME",
-  "R2_PUBLIC_BASE_URL",
+const authEnvKeys = [
+  "AUTH_SESSION_SECRET",
+  "AUTH_OTP_PEPPER",
+  "BREVO_API_KEY",
+  "BREVO_SENDER_EMAIL",
 ] as const;
 
-export type SupabaseEnv = Record<(typeof supabaseEnvKeys)[number], string>;
-export type R2Env = Record<(typeof r2EnvKeys)[number], string>;
+export type AuthEnv = Record<(typeof authEnvKeys)[number], string>;
 
-export function getSupabaseEnv(): SupabaseEnv {
-  requireEnv(supabaseEnvKeys);
-
+export function getAuthEnv(): AuthEnv {
+  requireEnv(authEnvKeys);
   return {
-    SUPABASE_URL: process.env.SUPABASE_URL!,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    AUTH_SESSION_SECRET: process.env.AUTH_SESSION_SECRET!,
+    AUTH_OTP_PEPPER: process.env.AUTH_OTP_PEPPER!,
+    BREVO_API_KEY: process.env.BREVO_API_KEY!,
+    BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL!,
   };
 }
 
-export function getR2Env(): R2Env {
-  requireEnv(r2EnvKeys);
-
-  return {
-    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID!,
-    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID!,
-    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY!,
-    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME!,
-    R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL!,
-  };
+export function getOtpTtlSeconds() {
+  return Number(process.env.AUTH_OTP_TTL_SECONDS ?? 600);
 }
 
-export function getAdminUserIds() {
-  return (process.env.CLERK_ADMIN_USER_IDS ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
+export function getSessionTtlSeconds() {
+  return Number(process.env.AUTH_SESSION_TTL_SECONDS ?? 2592000);
 }
 
 export function getPublicR2BaseUrl() {
-  return getR2Env().R2_PUBLIC_BASE_URL.replace(/\/$/, "");
+  return (process.env.R2_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
 }
