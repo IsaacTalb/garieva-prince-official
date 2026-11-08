@@ -1,0 +1,28 @@
+name = "garieva-prince"
+main = "./src/entry.js"
+compatibility_flags = ["nodejs_compat"]
+
+# Development binding (local D1)
+[[d1_databases]]
+binding = "DB"
+database_name = "garieva-prince-dev"
+database_id = ""  # Will be set at build time or via wrangler d1 create
+
+# Production binding (Cloudflare D1)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "garieva-prince-prod"
+# database_id = "your-production-database-id"
+
+# R2 bucket for media storage (optional - can use direct bindings later)
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "garieva-prince-media"
+
+vars = { NODE_ENV = "development" }
+
+[env.production]
+name = "garieva-prince-prod"
+
+[env.production.d1_databases]
+DB.database_name = "garieva-prince-prod"

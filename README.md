@@ -29,13 +29,14 @@ target the Cloudflare/Brevo direction.
 
 Use Node.js 24 and npm.
 
-```sh
-npm ci
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+### Cloudflare Workers + D1 Foundation ✅
+The repository has been upgraded to support Cloudflare Workers and D1 database binding.
+See [`docs/CLOUDFLARE.md`](./docs/CLOUDFLARE.md) for setup instructions.
+
+- Wrangler configuration created at [`wrangler.toml`](./wrangler.toml)
+- D1 abstraction layer implemented under [`src/lib/db/d1/`](./src/lib/db/d1/)
+- SQLite-compatible migrations converted to [`cloudflare/migrations/0001_core.sql`](./cloudflare/migrations/0001_core.sql)
+- Health check and repository functions ready for production binding
 
 ## Digital identity model
 
