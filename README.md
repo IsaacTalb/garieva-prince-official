@@ -1,61 +1,75 @@
-# Garieva Prince Official
+# Garieva Prince
 
-Garieva Prince is being rebuilt as a premium commerce + NFC digital ownership platform.
+Garieva Prince is being rebuilt as a premium fashion, commerce, NFC authenticity,
+and digital ownership platform.
 
-## Direction
+## Current status
 
-The storefront reuses proven ideas from the Wild Soul Club project, while Garieva Prince has its own design, authentication, ownership, NFC and resale system.
+The storefront/UI foundation from PR #3 is preserved and remains the working base.
+PR #4 adds the next architecture layer without discarding that tested UI.
 
-### Application
-- Next.js 16
-- React 19
-- TypeScript
-- Tailwind CSS
+### Target production architecture
+- Next.js 16 + React 19 + TypeScript
+- Cloudflare Workers for full-stack runtime
+- Cloudflare D1 for relational application data
+- Cloudflare R2 for product/profile/order media
+- Brevo for transactional email
+- Custom passwordless email verification and opaque session cookies
+- NXP NTAG 424 DNA for physical-garment authenticity and digital identity
 
-### Cloudflare
-- Workers for the full-stack application/API
-- D1 for relational data
-- R2 for product media, profile photos, payment proofs and delivery documents
-- Cloudflare custom domains/CDN
+### Transitional note
+PR #3 introduced Auth0 + PostgreSQL infrastructure. Those modules remain temporarily
+so the already-merged application continues to build while the Cloudflare D1/custom
+authentication runtime is implemented. They are not the final GP architecture.
 
-### Authentication
-Custom passwordless account system:
-1. enter email
-2. receive 6-digit email verification code through Brevo
-3. verify email
-4. new accounts complete name, username and phone
-5. server creates an HttpOnly session
+Do not add new features that depend on Auth0 or PostgreSQL. New backend work should
+target the Cloudflare/Brevo direction.
 
-No Clerk and no Supabase Auth.
+## Development
 
-### Email
-Brevo transactional email API is used for:
-- sign-in/sign-up verification
-- payment approval
-- ownership claim-code delivery
-- shipment/delivery updates
-- ownership transfers
-- resale events
-- restock notifications
+Use Node.js 24 and npm.
 
-### NFC
-Target physical chip: NXP NTAG 424 DNA.
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-Each physical garment is represented by a `product_items` record such as `GP001`.
-The NFC tag is permanently associated with the physical item; ownership changes in the database without rewriting the product identity.
+## Digital identity model
 
-## Safety
-The previous June implementation is preserved on the `legacy/pre-rebuild` branch.
+A catalog product and a physical garment are different records.
 
-## Current rebuild branch
-`codex/gp-cloudflare-rebuild`
+```
+product
+  -> variant
+      -> product_item (for example GP001)
+          -> NTAG 424 DNA
+          -> ownership claim code
+          -> ownership history
+```
 
-## Next engineering steps
-- migrate/adapt WSC commerce UI and admin features
-- add Cloudflare Worker runtime/bindings
-- implement D1 repository layer
-- implement OTP request/verify/session endpoints
-- implement account + wardrobe UI from the supplied GP mockups
-- implement manual payment approval email and ownership claim code delivery
-- implement NFC provisioning/SDM verification adapter
-- implement resale + ownership transfer
+The physical item ID never changes when ownership changes.
+
+## Authentication target
+
+The final GP account flow is:
+
+1. customer enters email
+2. Brevo sends a 6-digit code
+3. email is verified
+4. existing user signs in
+5. new user creates profile with name, username and phone
+6. server issues an HttpOnly opaque session
+
+OTP values and session tokens must never be stored in plaintext.
+
+## Branch safety
+
+The original pre-rebuild implementation is preserved in `legacy/pre-rebuild`.
+
+See:
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/UI_ALIGNMENT.md`
