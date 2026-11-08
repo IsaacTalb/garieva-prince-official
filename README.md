@@ -1,24 +1,33 @@
 # Garieva Prince
 
-The clean foundation for an independent premium fashion and NFC digital ownership
-platform. This release establishes architecture, identity, a catalog schema, and
-a storefront shell. Purchases, payment review, ownership claims, and resale are
-not yet implemented.
+Garieva Prince is being rebuilt as a premium fashion, commerce, NFC authenticity,
+and digital ownership platform.
+
+## Current status
+
+The storefront/UI foundation from PR #3 is preserved and remains the working base.
+PR #4 adds the next architecture layer without discarding that tested UI.
+
+### Target production architecture
+- Next.js 16 + React 19 + TypeScript
+- Cloudflare Workers for full-stack runtime
+- Cloudflare D1 for relational application data
+- Cloudflare R2 for product/profile/order media
+- Brevo for transactional email
+- Custom passwordless email verification and opaque session cookies
+- NXP NTAG 424 DNA for physical-garment authenticity and digital identity
+
+### Transitional note
+PR #3 introduced Auth0 + PostgreSQL infrastructure. Those modules remain temporarily
+so the already-merged application continues to build while the Cloudflare D1/custom
+authentication runtime is implemented. They are not the final GP architecture.
+
+Do not add new features that depend on Auth0 or PostgreSQL. New backend work should
+target the Cloudflare/Brevo direction.
 
 ## Development
 
-Use Node.js 24 (pinned in `.node-version`) and npm. Cloud tasks already have an
-isolated checkout; use it rather than creating a worktree unless requested.
-
-```sh
-npm install
-npm run dev
-```
-
-Public pages build and run without credentials. Account and admin access fail
-closed when integrations are absent. `/api/health` is liveness only. No sample
-products are seeded. The catalog is empty without a database; configured database
-failures surface as failures rather than being silently treated as empty data.
+Use Node.js 24 and npm.
 
 ```sh
 npm ci
@@ -26,30 +35,41 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
-npm start
 ```
 
-The regenerated lockfile supports frozen installs. `.npmrc` places the package
-cache in ignored `.npm-cache/`, including on restricted cloud machines. Tests
-validate schemas and migrations using isolated PostgreSQL through PGlite; they
-never connect to a live provider.
+## Digital identity model
 
-## Integrations
+A catalog product and a physical garment are different records.
 
-Copy `.env.example` to ignored `.env.local` and fill in real settings only for
-integrations you are using. Authentication is Auth0; Supabase is PostgreSQL only;
-media uses separate public/private Cloudflare R2 buckets. Deployment targets
-Vercel's Next.js preset with Node.js 24.x.
+```
+product
+  -> variant
+      -> product_item (for example GP001)
+          -> NTAG 424 DNA
+          -> ownership claim code
+          -> ownership history
+```
 
-Apply migrations in order to a **new, dedicated GP database**. They are not a
-conversion script for the legacy production database. Installation, builds, and
-CI never apply production migrations.
+The physical item ID never changes when ownership changes.
 
-See [Architecture](docs/ARCHITECTURE.md), [Implementation plan](docs/IMPLEMENTATION_PLAN.md),
-and [Rebuild audit](docs/REBUILD_AUDIT.md). The original implementation remains in
-Git history and local `legacy/pre-rebuild`; history was not rewritten and no
-branch was pushed by this phase.
+## Authentication target
 
-The storefront now follows the requested reference UI layout while retaining GP
-branding, Auth0, and server-side authorization. See [UI alignment](docs/UI_ALIGNMENT.md)
-for scope and the remaining content/integration requirements.
+The final GP account flow is:
+
+1. customer enters email
+2. Brevo sends a 6-digit code
+3. email is verified
+4. existing user signs in
+5. new user creates profile with name, username and phone
+6. server issues an HttpOnly opaque session
+
+OTP values and session tokens must never be stored in plaintext.
+
+## Branch safety
+
+The original pre-rebuild implementation is preserved in `legacy/pre-rebuild`.
+
+See:
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/UI_ALIGNMENT.md`

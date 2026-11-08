@@ -1,243 +1,166 @@
 # Garieva Prince architecture
 
-## Scope
+## Decision
 
-This is an independent premium fashion and NFC digital ownership foundation,
-replacing the previous application. New typographic artwork and house copy
-establish a separate identity. No reference logos, photography, products, content,
-or authentication were imported. Final brand artwork/copy need business approval
-before launch.
+PR #3 established the tested storefront and account/admin presentation under `src/`.
+That structure is retained.
 
-Implemented: storefront shell and honest empty states; Auth0 SDK wiring;
-server-only application identity and administrator resolution; public catalog
-read repository; Zod boundaries; separate-bucket R2 signing primitives; identity
-and catalog migrations; CI and isolated PostgreSQL tests.
+The final backend direction is now:
 
-Product detail reads and searchable catalog presentation are available. Cart,
-wishlist, checkout, and admin sections have presentation-only unavailable states.
-Deferred: catalog management, collection/drop publication, archive pricing,
-commerce mutations, orders, payment review, inventory ledger, email,
-NFC verification, ownership claims/transfers, and resale.
+```
+Next.js
+  |
+Cloudflare Worker
+  |------ D1
+  |------ R2
+  |
+Brevo
+  |
+NTAG 424 DNA verification/provisioning
+```
 
-## Stack and boundaries
+Auth0 and PostgreSQL code merged in PR #3 are transitional only. They remain until
+the D1/custom-auth replacement is fully implemented and build-tested. New features
+must not deepen those dependencies.
 
-Next.js 16.2.10 App Router, React 19.2.4, TypeScript, Tailwind CSS 4, Lucide icons, Auth0 Next.js
-SDK 4, PostgreSQL through `postgres`, AWS S3 SDK for R2, and Zod 4. Real dependency
-types replace ambient vendor stubs. Add shadcn/ui when accessible forms/dialogs
-warrant it; no unused component suite is installed in the foundation.
+## Application layout
 
-```text
+```
 src/
   app/
-    (store)/         home, products, collections, drops, archive-sales
-    account/         authenticated personal space
-    ownership/       public explanation; claims deferred
-    resale/          public introduction; marketplace deferred
-    admin/           application-role protected operations shell
-    api/             liveness and authenticated account read
   components/
-    storefront/ account/ ownership/ admin/ shared/
   lib/
-    auth/            Auth0 client, sessions, authorization guards
-    db/              PostgreSQL client, user resolution, catalog reads
-    r2/              separate-bucket media infrastructure
-    email/ nfc/ orders/ ownership/  documented future service boundaries
-  schemas/           Zod validation and inferred types
-  types/             ownership identifiers
-  proxy.ts           Auth0 interception and rolling sessions
-supabase/migrations/ ordered database-only migrations
-tests/               validation and isolated PostgreSQL invariants
-docs/                architecture, phase plan, rebuild audit
+    auth/
+    db/
+    email/
+    nfc/
+    orders/
+    ownership/
+    r2/
+  schemas/
+  types/
+
+cloudflare/
+  migrations/
 ```
 
-Pages/layouts are Server Components. Client islands handle the responsive header,
-route-aware footer, admin navigation, and Next.js error boundary. Database and
-authorization checks remain on the server.
-`server-only` prevents session, database, and R2 modules entering client bundles.
+## Authentication target
 
-## Auth0 and application identity
+Custom passwordless email verification:
 
-Auth0 owns authentication and encrypted HTTP-only session cookies. The SDK
-handles `/auth/login`, `/auth/callback`, and `/auth/logout` via Next.js 16
-`src/proxy.ts`; broad matching supports rolling sessions. Its optional access
-token endpoint is disabled. Invalid/missing auth configuration yields a 503 on
-auth endpoints, while public pages remain available. Credentials are never
-invented or replaced with a fake authentication mode.
-
-Configure an Auth0 **Regular Web Application**. Register
-`http://localhost:3000/auth/callback` as a local allowed callback URL and
-`http://localhost:3000` as an allowed logout URL. For production, register the
-actual HTTPS origin plus `/auth/callback` and the HTTPS origin for logout.
-`APP_BASE_URL` must be the exact deployment origin. Preview deployments need
-separately registered URLs and scoped credentials.
-
-`users.id` is a generated UUID; `auth0_sub` is a unique provider mapping. All
-internal user foreign keys reference `users.id`. The table includes email,
-display name, username, phone, avatar URL, visibility, and timestamps. Profiles
-default to private. Only verified email claims are used during initial user
-provisioning; existing application profile fields are not overwritten at login.
-Case-insensitive email uniqueness causes duplicate-email subjects to fail closed,
-never silently link accounts. Explicit account linking and recovery are later work.
-
-`user_roles(user_id, role)` controls administration. New users have no role.
-There is no provider-subject FK, automatic first-user admin, email allowlist,
-or public role setter. Every protected service/action/route must call
-`requireUser()` or `requireAdmin()`; proxy/layout coverage alone is insufficient.
-The account API returns only internal ID, display name, and visibility with
-`private, no-store`, omitting provider subjects and contact data.
-
-After first sign-in provisions a user, a trusted database operator can bootstrap
-an administrator using their application UUID:
-
-```sql
-insert into public.user_roles(user_id, role)
-values ('APPLICATION_USER_UUID', 'admin');
+```
+email
+ -> generate 6-digit OTP
+ -> hash OTP
+ -> store hash + expiry in D1
+ -> Brevo sends code
+ -> verify code
+ -> create/resolve user
+ -> generate opaque session token
+ -> store only token hash
+ -> Secure + HttpOnly + SameSite cookie
 ```
 
-Never give the runtime role permission to write `user_roles`. Future role
-management requires explicit permissions and audit records.
+Required protections:
+- rate limit OTP issuance and verification
+- newest-code-only or explicit invalidation policy
+- short expiry
+- attempt limits
+- single use
+- generic error messages
+- no browser-trusted user IDs
+- admin authorization from D1 roles
 
-## Supabase as PostgreSQL only
+## Commerce identity model
 
-Direct server-side parameterized queries replace Supabase client auth patterns.
-There is no browser database client, Supabase Auth, `auth.users` reference,
-auth trigger, anon key, or Supabase Storage dependency. Verified PostgreSQL TLS
-is mandatory (`verify-full`); install the provider CA if necessary rather than
-disabling verification.
+A product model is not an individual garment.
 
-For Vercel, use a Supabase transaction pooler URL. Prepared statements are
-disabled and each process has a three-connection maximum. Size deployment
-concurrency against provider limits. Connections are lazy, not build-time.
-The dynamic public catalog selects only published, non-deleted public fields.
-Database failures are not hidden as empty catalog results.
-
-The migrations create eight tables:
-
-| Table | Purpose |
-| --- | --- |
-| users | Application-owned, private-by-default identity |
-| user_roles | Deny-by-default administrator membership |
-| collections | Editorial grouping and publication state |
-| drops | Scheduled releases and lifecycle windows |
-| products | Catalog identity, currency, lifecycle, soft deletion |
-| collection_products | Many-to-many collection membership |
-| product_variants | Stable SKU, options, minor-unit price, stock/reservations |
-| product_media | Public object keys, alt text, ordering |
-
-Every sellable item has a stable variant ID. Money is integer minor units with
-a currency per product and a safe-integer bound. Stock is variant-owned, with
-no duplicate product-level balance. Reservations cannot exceed on-hand stock.
-SKU and case-insensitive option combinations are unique. Physical garment
-instances will be separate from variant stock. No sample data is seeded.
-
-All tables enable RLS with no browser policies. Grants to PUBLIC, `anon`,
-`authenticated`, and `service_role` are revoked, including Supabase defaults.
-RLS does not implement Auth0 authorization; the trusted server verifies identity
-and access. The table owner can use the schema for initial development. In
-production, a database operator must provision a dedicated **server-only** login
-with BYPASSRLS and narrow table/column grants, without schema-owner privileges.
-Never expose that login to the browser. Example grants for the current release,
-after securely provisioning the actual runtime role:
-
-```sql
-grant usage on schema public to garieva_runtime;
-grant select on public.users, public.user_roles, public.products, public.product_media to garieva_runtime;
-grant insert (auth0_sub, email, display_name) on public.users to garieva_runtime;
-grant update (auth0_sub) on public.users to garieva_runtime;
+```
+products
+  -> product_variants
+      -> product_items
+          -> nfc_tags
+          -> ownership_claim_codes
+          -> ownerships
 ```
 
-The subject-only conflict update atomically returns an existing user. Triggers
-maintain timestamps. These grants do not enable catalog or role mutations.
-Review future service grants separately. Only the trusted runtime login uses
-BYPASSRLS; never browser roles.
+Example:
+- Product: Anniversary Jersey
+- Variant: Black / L
+- Physical item: GP001
+- NFC: one NTAG 424 DNA
+- Current owner: one active ownership record
 
-Apply migrations in order to a **new dedicated GP database** through Supabase
-CLI or the SQL editor. Inspect `supabase db push --dry-run` on a linked development
-project before applying. Migration credentials are separate from runtime
-credentials. This task did not apply remote migrations or convert legacy data;
-retaining legacy production data requires a separate migration/rollback plan.
+There must be only one current owner per physical item.
 
-## Cloudflare R2
+## NFC
 
-Use separate public/private buckets. Only product media is public; profiles and
-order/payment media are private by default. Internal helpers create immutable
-UUID keys under an application owner ID, constrain image types and declared
-sizes to 10 MiB, and provide five-minute upload / one-minute private read URLs.
-Private objects receive no public URL and use `private, no-store`; public product
-media uses immutable cache headers. Persist keys, never signed URLs.
+NFC proves the physical tag/item association. It does not by itself grant ownership.
 
-These are signing primitives, **not authorized upload endpoints**. Before
-exposing them, implement owner/purpose authorization, CSRF checks, rate limits,
-quotas, origin-restricted CORS, magic-byte/actual-size validation, image
-re-encoding, and pending-object/finalization records. The helper's declared size
-and MIME validation are not proof of uploaded bytes. Match finalization to the
-server-issued owner/key; never accept arbitrary client buckets/keys. Private
-reads require order/profile access checks. Public avatar publication, if added,
-requires explicit consent.
+Target NTAG 424 DNA flow:
+1. receive factory-default/unlocked tag
+2. read and verify chip
+3. associate UID with product_item
+4. provision security/SDM using a controlled tool
+5. pre-install QA
+6. install into garment
+7. post-install QA
+8. customer tap hits verification endpoint
+9. backend verifies secure dynamic data
+10. product passport is displayed
 
-R2 writes and SQL are not one transaction. Add pending/finalized media states,
-idempotent orphan cleanup and an outbox before mutations. Do not delete the only
-object and then risk failing the database update.
+AES key material must never be committed to Git, exposed to browser code, or stored
+as plaintext application data.
 
-## Later commerce and ownership contracts
+## Ownership
 
-The reference informed server-authoritative pricing, atomic checkout,
-row-locked inventory, stable variants, separate payment/fulfillment states,
-auditable admin operations, and durable R2 keys. Its authentication, branding,
-content, and products were not imported. See the audit for inspected paths/ref.
+Ownership is append-only history:
+- original purchase
+- resale
+- transfer
+- gift
+- admin assignment
 
-Checkout accepts variant IDs and quantities, never authoritative client totals.
-One transaction locks variants deterministically, checks publication/drop/archive
-timing, calculates prices, reserves stock, snapshots lines, and stores an
-idempotent result. Payment review locks payment/order/reservations, validates
-transitions, audits the reviewer, and releases/consumes inventory exactly once.
-Payment receipt submission is not approval; fulfillment is independent.
+A transfer ends the previous current row and creates a new current row. The product
+item and NFC identity do not change.
 
-Ownership attaches to a serialized garment, not a SKU or Auth0 subject. A tag
-UID/static URL is not proof. Hardware/cryptographic verification must be selected
-before claims are implemented. Replay protection, issuance eligibility, single
-active owner, consensual transfers, and append-only history are prerequisites.
-Resale depends on those protections, not just a listing form.
+## Payment and claim
 
-## Configuration and deployment
+```
+order
+ -> payment proof
+ -> admin approval
+ -> allocate physical item
+ -> activate claim code
+ -> Brevo confirmation email
+ -> delivery
+ -> NFC tap
+ -> claim code
+ -> ownership
+```
 
-| Integration | Variables |
-| --- | --- |
-| Auth0 | AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_SECRET, APP_BASE_URL |
-| PostgreSQL | DATABASE_URL |
-| R2 | R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_BUCKET_NAME, R2_PRIVATE_BUCKET_NAME, R2_PUBLIC_BASE_URL |
+Payment approval and claim operations must be idempotent.
 
-All sensitive values remain server-side. Cookie encryption, database passwords,
-and AWS signing require raw runtime credentials; HTTPS-proxy placeholders cannot
-supply them. Configure securely in ignored `.env.local` or environment settings,
-never chat/source. `.env.example` contains blank credential fields. Provider
-egress needs the actual Auth0 tenant, pooler host/port, R2 endpoint, and public
-media hostname; no tenant-specific hostnames are guessed.
+## Storage
 
-Vercel: Next.js preset, Node.js 24.x, `npm ci`, `npm run build`. Scope credentials
-separately to development/preview/production. Schema deployment is separate from
-Vercel builds. CI checks frozen install, lint, type generation/check, isolated
-PostgreSQL/schema tests, and a credential-free production build. Live Auth0,
-Supabase TLS/permissions, R2 uploads, browser interaction, and deployment remain
-integration checks before production launch.
+R2 stores:
+- public product media
+- private profile images unless explicitly published
+- payment proofs
+- delivery/challan documents
+- resale media
 
-## Storefront UI alignment
+Persist object keys, not signed URLs.
 
-At the user's request, the presentation now follows the reference UI: fixed
-48px glass header, centered GP wordmark, desktop shop dropdown and action icons,
-mobile modal navigation/search, full-screen collection hero, floating product
-showcase, white surfaces, Helvetica/Arial typography, rounded cards/buttons,
-brand signoff, and four-column footer. The earlier cream/burgundy editorial
-layout was removed. Reference branding, proprietary font files, photographs,
-product data, contacts, authentication, and API implementation were not imported.
+## Migration path
 
-No GP campaign photograph is configured, so the hero uses the reference's dark
-gradient fallback. Real published GP products use the existing product-media
-relation and configured R2 public base URL, not sample merchandise. Missing
-photography gets an explicit placeholder. Search is parameterized on the server.
-The public catalog query now needs SELECT on product_media as well as products.
-
-Admin pages reuse the sidebar/top-bar layout only after server-side authorization;
-unimplemented sections do not expose mutation controls or invented metrics.
-Account details stay server-rendered and read-only. Checkout does not collect
-payment details or create orders; all purchasing controls remain disabled.
+1. Keep PR #3 storefront/UI stable.
+2. Add D1 schema and Brevo/auth primitives.
+3. Implement Worker/D1 repository layer.
+4. Implement OTP request/verify/session endpoints.
+5. Move catalog/account/admin reads from PostgreSQL to D1.
+6. Replace Auth0 route/session dependencies.
+7. Remove Auth0/PostgreSQL packages and Supabase migrations.
+8. Move R2 access to Cloudflare-native bindings.
+9. Add ownership/NFC/resale workflows.
+10. Run lint/typecheck/tests/build before merging each major phase.
