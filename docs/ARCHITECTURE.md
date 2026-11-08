@@ -19,9 +19,8 @@ Brevo
 NTAG 424 DNA verification/provisioning
 ```
 
-Auth0 and PostgreSQL code merged in PR #3 are transitional only. They remain until
-the D1/custom-auth replacement is fully implemented and build-tested. New features
-must not deepen those dependencies.
+The application runs on Cloudflare Workers with D1 as the primary database.
+PostgreSQL runtime has been removed; all queries now use SQLite/D1 SQL syntax.
 
 ## Application layout
 

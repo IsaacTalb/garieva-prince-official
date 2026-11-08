@@ -2,7 +2,7 @@ import { PageIntro } from "@/components/shared/page-intro";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AccountSummary } from "@/components/account/account-summary";
 import { isAuthConfigured } from "@/lib/auth/client";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { isDatabaseConfigured } from "@/lib/db/d1/client";
 import { requirePageUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";

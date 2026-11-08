@@ -4,7 +4,7 @@
 
 This guide covers setting up Cloudflare Workers with D1 database binding for the Garieva Prince application.
 
-The current implementation uses PostgreSQL as a transitional runtime. Once D1 is fully migrated, it will replace PostgreSQL.
+D1 is the primary and only database runtime for this application.
 
 ---
 
