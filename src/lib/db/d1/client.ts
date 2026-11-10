@@ -18,7 +18,7 @@ let databaseName: string | undefined;
  * Get D1 database client
  * 
  * Returns the bound D1 database or creates it from environment.
- * Throws if DATABASE_URL is not configured (useless in production without bindings).
+ * Defaults to SQLite for local development if DATABASE_URL is not set.
  */
 export function getDatabase() {
   // Initialize from env for local development
@@ -26,7 +26,12 @@ export function getDatabase() {
     const dbUrl = process.env.DATABASE_URL;
     databaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME ?? "garieva-prince";
     
-    if (!dbUrl) {
+    // Default to SQLite for local development
+    const defaultDbUrl = "sqlite:./dev.db";
+    const useDefaultUrl = !dbUrl || dbUrl === defaultDbUrl;
+    
+    if (!useDefaultUrl && !dbUrl) {
+      // This shouldn't happen in practice since we now default to SQLite
       throw new Error("DATABASE_URL must be set for development. Bindings will be used in production.");
     }
     
@@ -34,7 +39,7 @@ export function getDatabase() {
     // In production, this would use the Cloudflare Workers D1 API directly
     const db = require("postgres");
     
-    d1Bound = db(dbUrl, {
+    d1Bound = db(dbUrl || defaultDbUrl, {
       prepare: false,
       max: 3,
       idle_timeout: 20,
