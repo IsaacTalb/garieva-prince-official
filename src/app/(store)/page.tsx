@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrandSignoff } from "@/components/storefront/brand-signoff";
 import { ProductShowcase } from "@/components/storefront/product-showcase";
-import { getPublishedProducts } from "@/lib/db/catalog";
+import { getPublishedProducts } from "@/lib/db/d1/catalog";
 
 export const dynamic = "force-dynamic";
 
