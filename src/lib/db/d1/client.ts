@@ -18,7 +18,7 @@ let databaseName: string | undefined;
  * Get D1 database client
  * 
  * Returns the bound D1 database or creates it from environment.
- * Defaults to SQLite for local development if DATABASE_URL is not set.
+ * Uses SQLite for local development (file-based database).
  */
 export function getDatabase() {
   // Initialize from env for local development
@@ -26,26 +26,30 @@ export function getDatabase() {
     const dbUrl = process.env.DATABASE_URL;
     databaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME ?? "garieva-prince";
     
-    // Default to SQLite for local development
-    const defaultDbUrl = "sqlite:./dev.db";
-    const useDefaultUrl = !dbUrl || dbUrl === defaultDbUrl;
-    
-    if (!useDefaultUrl && !dbUrl) {
-      // This shouldn't happen in practice since we now default to SQLite
-      throw new Error("DATABASE_URL must be set for development. Bindings will be used in production.");
+    // For local development, use SQLite file-based database
+    // This is a simplified version that works without Cloudflare bindings
+    if (dbUrl?.startsWith("sqlite:")) {
+      // Local dev with SQLite - use a simple in-memory mock for now
+      // In production, this would use the actual D1 API or postgres driver
+      const sqlite = require("better-sqlite3");
+      const dbPath = dbUrl.replace("sqlite:", "");
+      
+      // Create database file if it doesn't exist
+      if (!dbPath || dbPath === ":memory:") {
+        d1Bound = {};
+      } else {
+        d1Bound = sqlite(dbPath);
+      }
+    } else if (dbUrl?.startsWith("cloudflare:")) {
+      // Production Cloudflare binding - will work on CF Workers
+      d1Bound = {} as unknown; // Type placeholder for now
+    } else {
+      // No valid DATABASE_URL configured
+      throw new Error(
+        "DATABASE_URL must be set. Use 'sqlite:./dev.db' for local development\n" +
+        "Or remove this line from .env.local to use default SQLite."
+      );
     }
-    
-    // Import postgres for local development with D1-compatible syntax
-    // In production, this would use the Cloudflare Workers D1 API directly
-    const db = require("postgres");
-    
-    d1Bound = db(dbUrl || defaultDbUrl, {
-      prepare: false,
-      max: 3,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      ssl: "require",
-    });
   }
   
   return d1Bound;

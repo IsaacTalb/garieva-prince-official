@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "generate-secrets": "node -e \"const crypto=require('crypto');console.log('AUTH_SESSION_SECRET='+crypto.randomBytes(32).toString('hex'))\" && node -e \"const crypto=require('crypto');console.log('AUTH_OTP_PEPPER='+crypto.randomBytes(16).toString('hex'))\"\">> .env.local 2>&1 || true",
     "postinstall": "npm run build"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "better-sqlite3": "13.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
