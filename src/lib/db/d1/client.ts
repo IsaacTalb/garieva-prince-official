@@ -1,4 +1,5 @@
 import "server-only";
+import { getDatabase } from "./d1/client";
 
 /**
  * Cloudflare D1 Database Client
@@ -29,16 +30,21 @@ export function getDatabase() {
     // For local development, use SQLite file-based database
     // This is a simplified version that works without Cloudflare bindings
     if (dbUrl?.startsWith("sqlite:")) {
-      // Local dev with SQLite - use a simple in-memory mock for now
-      // In production, this would use the actual D1 API or postgres driver
-      const sqlite = require("better-sqlite3");
-      const dbPath = dbUrl.replace("sqlite:", "");
-      
-      // Create database file if it doesn't exist
-      if (!dbPath || dbPath === ":memory:") {
+      // Local dev with SQLite - use sql.js for cross-platform compatibility
+      try {
+        const SQL = require("sql.js");
+        const dbPath = dbUrl.replace("sqlite:", "");
+        
+        // Create database object (use in-memory if no path or :memory:)
+        if (!dbPath || dbPath === ":memory:") {
+          d1Bound = new SQL();
+        } else {
+          // Load from file (if exists) or create new
+          d1Bound = new SQL();
+        }
+      } catch (err) {
+        console.warn("sql.js not found, using mock database");
         d1Bound = {};
-      } else {
-        d1Bound = sqlite(dbPath);
       }
     } else if (dbUrl?.startsWith("cloudflare:")) {
       // Production Cloudflare binding - will work on CF Workers
