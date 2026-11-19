@@ -1,0 +1,52 @@
+# Vercel Ignore File - Prevents auto-detection of legacy integrations
+# https://vercel.com/docs/concepts/git/environment-variables-and-secrets#ignoring-files
+
+# Transitional integration folders (Clerk, Supabase)
+.clerk/
+.supabase/
+
+# Local development files
+.env.local
+.env.development
+.env.test
+
+# Next.js build cache
+.next/
+out/
+
+# Temporary and cache files
+.cache/
+.temp/
+tmp/
+node_modules/.cache/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Database files for local development
+*.db
+*.sqlite
+dev.db
+
+# Documentation (keep in repo for reference)
+!.env.production.example
+
+# Cloudflare files (if using that platform)
+.cloudflare/
+wrangler.toml
+
+# Test files
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# MCP and development tools
+.mcp/

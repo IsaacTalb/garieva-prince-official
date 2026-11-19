@@ -73,4 +73,12 @@ dev.db
 # generated documentation that shouldn't be tracked
 docs/*.md  # Unless explicitly committed
 
+# Transitional integration folders - keep these ignored to prevent Vercel from auto-detecting them
+.clerk/
+.supabase/
+.vercel/  # Vercel deployment metadata
+
+# Cloudflare (optional, but good to exclude)
+/cloudflare/
+
 <EOF>

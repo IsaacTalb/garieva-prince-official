@@ -2,6 +2,30 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  
+  // Disable automatic integration detection for legacy services (Clerk, Supabase)
+  experimental: {
+    integrationsDetection: false,
+  },
+
+  // Security headers for production
+  headers: [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+      ],
+    },
+  ],
+
+  // Optimize images for production
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.r2.cloudflarestorage.com' },
+      { protocol: 'https', hostname: '**.vercel.app' },
+    ],
+  },
 };
 
 export default nextConfig;
