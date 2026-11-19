@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { AccessError, requireAdmin } from "@/lib/auth/session";
-import { isAuthConfigured } from "@/lib/auth/client";
+import { isCustomAuthConfigured } from "@/lib/auth/client";
 import { isDatabaseConfigured } from "@/lib/db/d1/client";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminShell } from "@/components/admin/admin-shell";

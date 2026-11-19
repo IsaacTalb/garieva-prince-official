@@ -1,8 +1,8 @@
 import { PageIntro } from "@/components/shared/page-intro";
 import { FoundationStatus } from "@/components/admin/foundation-status";
 import { requireAdmin } from "@/lib/auth/session";
-import { isAuthConfigured } from "@/lib/auth/client";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { isCustomAuthConfigured } from "@/lib/auth/client";
+import { isDatabaseConfigured } from "@/lib/db/d1/client";
 import { AccessError } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
 

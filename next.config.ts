@@ -1,13 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  
-  // Disable automatic integration detection for legacy services (Clerk, Supabase)
-  experimental: {
-    integrationsDetection: false,
-  },
-
   // Security headers for production
   headers: [
     {

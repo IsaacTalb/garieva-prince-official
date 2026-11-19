@@ -147,29 +147,65 @@ export async function createOtpRecord({
 export async function verifyOtp({
   purpose,
   code,
+  email,
 }: {
   purpose: "sign_in" | "sign_up" | "change_email";
   code: string;
+  email?: string;
 }): Promise<{ verified: true } | { verified: false; error: string }> {
   const db = getDatabase();
   
-  // Find active OTP for this purpose (only one active OTP per email/purpose)
+  // Find active OTP for this email and purpose
+  if (email) {
+    const rows = await db`
+      SELECT id, code_hash, attempt_count 
+      FROM email_verification_codes 
+      WHERE LOWER(email) = LOWER(${email})
+        AND purpose = ${purpose}
+        AND consumed_at IS NULL
+        AND expires_at > datetime('now')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    if (!rows[0] || !rows[0].code_hash) {
+      return { verified: false, error: "Code not found or expired" };
+    }
+    const codeRow = rows[0] as Pick<EmailVerificationCode, 'id' | 'code_hash' | 'attempt_count'>;
+    
+    // Check rate limiting
+    if (codeRow.attempt_count >= MAX_ATTEMPTS) {
+      return { verified: false, error: "Too many failed attempts. Please wait before trying again." };
+    }
+    
+    // Verify the code hash
+    const isHashValid = await verifyOtpHash(code, codeRow.code_hash);
+    if (!isHashValid) {
+      await db`UPDATE email_verification_codes SET attempt_count = attempt_count + 1 WHERE id = ${codeRow.id}`;
+      return { verified: false, error: "Invalid code" };
+    }
+    
+    // Mark OTP as consumed
+    await db`UPDATE email_verification_codes SET consumed_at = datetime('now') WHERE id = ${codeRow.id}`;
+    
+    return { verified: true };
+  }
+  
+  // If no email provided, query all active OTPs for this purpose (fallback)
   const rows = await db`
-    SELECT id, code_hash, attempt_count 
+    SELECT id, code_hash, attempt_count, email
     FROM email_verification_codes 
-    WHERE LOWER(email) LIKE ? 
-      AND purpose = ${purpose}
+    WHERE purpose = ${purpose}
       AND consumed_at IS NULL
       AND expires_at > datetime('now')
     ORDER BY created_at DESC
     LIMIT 1
-  `, [code.toLowerCase()];
+  `;
   
-  if (!rows[0]) {
+  if (!rows[0] || !rows[0].code_hash) {
     return { verified: false, error: "Code not found or expired" };
   }
   
-  const codeRow = rows[0] as Pick<EmailVerificationCode, 'id' | 'code_hash' | 'attempt_count'>;
+  const codeRow = rows[0] as Pick<EmailVerificationCode, 'id' | 'code_hash' | 'attempt_count'> & { email: string };
   
   // Check rate limiting
   if (codeRow.attempt_count >= MAX_ATTEMPTS) {
@@ -177,16 +213,22 @@ export async function verifyOtp({
   }
   
   // Verify the code hash
-  if (!await verifyOtpHash(code, codeRow.code_hash)) {
+  const isHashValid = await verifyOtpHash(code, codeRow.code_hash);
+  if (!isHashValid) {
     await db`UPDATE email_verification_codes SET attempt_count = attempt_count + 1 WHERE id = ${codeRow.id}`;
-    
     return { verified: false, error: "Invalid code" };
   }
   
   // Mark OTP as consumed
   await db`UPDATE email_verification_codes SET consumed_at = datetime('now') WHERE id = ${codeRow.id}`;
   
-  return { verified: true };
+  // Return email along with verification status
+  if (email) {
+    return { verified: true, email };
+  }
+  
+  // Fallback case - use the email from the queried row
+  return { verified: true, email: codeRow.email };
 }
 
 /**

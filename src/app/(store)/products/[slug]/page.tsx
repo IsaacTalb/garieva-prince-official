@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
-import { getPublishedProductBySlug } from "@/lib/db/catalog";
+import { getPublishedProductBySlug } from "@/lib/db/d1/catalog";
 import { slugSchema } from "@/schemas/catalog";
 
 export const dynamic = "force-dynamic";

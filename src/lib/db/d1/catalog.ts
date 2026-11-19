@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 import { Product, type CreateProductInput } from "@/schemas/catalog";
 import { getProductById } from "./d1/products";
 import { getFirstMediaByProduct } from "./d1/product_media";

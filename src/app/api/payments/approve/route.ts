@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/db/d1/admin";
+import { requireAdmin } from "@/lib/auth/session";
 import { getDatabase } from "@/lib/db/d1/client";
 import { generateClaimCode } from "@/lib/db/d1/ownership_claim_codes";
 

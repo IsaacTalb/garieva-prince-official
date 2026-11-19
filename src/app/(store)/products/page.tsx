@@ -3,7 +3,7 @@ import { PageIntro } from "@/components/shared/page-intro";
 import { ProductShowcase } from "@/components/storefront/product-showcase";
 import { BrandSignoff } from "@/components/storefront/brand-signoff";
 import { Search } from "lucide-react";
-import { getPublishedProducts } from "@/lib/db/catalog";
+import { getPublishedProducts } from "@/lib/db/d1/catalog";
 
 export const metadata: Metadata = { title: "The wardrobe" };
 export const dynamic = "force-dynamic";

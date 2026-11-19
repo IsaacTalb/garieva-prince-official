@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify OTP and get user ID from D1
-    const { verifyOtp, getUserById, getUserByEmail } = await import("@/lib/db/d1");
+    const { verifyOtp } = await import("@/lib/auth/otp");
+    const { getUserById, getUserByEmail } = await import("@/lib/db/d1/users");
     
     const result = await verifyOtp({ purpose, code });
     
