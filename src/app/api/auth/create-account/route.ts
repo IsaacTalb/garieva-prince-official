@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Create user in D1 with optional profile fields
-    const { createUser, getDatabase } = await import("@/lib/db/d1");
+    const { createUser, getDatabase } = await import("@/lib/db/d1/client");
     
     const result = await createUser({
       email: normalizedEmail,

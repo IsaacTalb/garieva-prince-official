@@ -36,10 +36,11 @@ export async function POST(request: NextRequest) {
     // Begin transaction (SQLite compatible)
     await db.transaction(() => {
       // 1. Check if order exists and has payment proof
-      const [order] = db`
-        SELECT * FROM orders 
-        WHERE id = ? AND status IN ('pending_payment', 'payment_proof_uploaded')
-      `, [orderId];
+      const result = db(
+        "SELECT * FROM orders WHERE id = ? AND status IN (?)",
+        [orderId, 'pending_payment', 'payment_proof_uploaded']
+      );
+      const order = result && result[0];
 
       if (!order) {
         throw new Error("Order not found or already processed");

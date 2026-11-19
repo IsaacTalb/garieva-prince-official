@@ -335,14 +335,3 @@ export async function getOtpStatus(email: string): Promise<{
 /**
  * Clean up old OTP codes (housekeeping)
  */
-export async function cleanupExpiredOtps(): Promise<number> {
-  const db = getDatabase();
-  
-  // Delete expired consumed codes
-  const result = await db`
-    DELETE FROM email_verification_codes 
-    WHERE expires_at < datetime('now') AND consumed_at IS NOT NULL
-  `;
-  
-  return result as number;
-}

@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { AppUserSchema, type AppUser } from "@/schemas/user";
+import { getDatabase } from "./client";
+import { appUserSchema, type AppUser } from "@/schemas/user";
 
 /**
  * User Repository - D1-backed custom authentication
