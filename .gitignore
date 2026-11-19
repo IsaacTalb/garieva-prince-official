@@ -30,9 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files - NEVER commit production secrets to Git!
+.env.local
+.env.production
+.env.development
+.env.test
 !.env.example
+!.env.local.example  # Example file that can be safely shared
 
 # vercel
 .vercel
@@ -43,3 +47,30 @@ next-env.d.ts
 
 # local package cache
 /.npm-cache/
+.npm/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# logs
+*.log
+logs/
+
+# temporary files
+.cache/
+.temp/
+tmp/
+
+# database (SQLite file for local development)
+*.db
+*.sqlite
+dev.db
+
+# generated documentation that shouldn't be tracked
+docs/*.md  # Unless explicitly committed
+
+<EOF>

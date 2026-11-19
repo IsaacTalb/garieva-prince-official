@@ -27,7 +27,7 @@ target the Cloudflare/Brevo direction.
 
 ## Development
 
-Use Node.js 24 and npm.
+Use Node.js 24 and npm for your project.
 
 ### Cloudflare Workers + D1 Foundation ✅
 The repository has been upgraded to support Cloudflare Workers and D1 database binding.
