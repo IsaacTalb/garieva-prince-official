@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "generate-secrets": "node -e \"const crypto=require('crypto');console.log('AUTH_SESSION_SECRET='+crypto.randomBytes(32).toString('hex'))\" && node -e \"const crypto=require('crypto');console.log('AUTH_OTP_PEPPER='+crypto.randomBytes(16).toString('hex'))\"\">> .env.local 2>&1 || true",
-    "postinstall": "npm run build"
+    "postinstall": "echo 'Skipping postinstall build. Run npm run build manually if needed.'"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",
