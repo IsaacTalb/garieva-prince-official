@@ -52,23 +52,26 @@ export async function POST(request: NextRequest) {
       }
 
       // 3. Approve payment and update order status
-      db.prepare(`
-        UPDATE orders 
-        SET status = 'paid', 
-              updated_at = datetime('now')
-        WHERE id = ?
-      `).run([orderId]);
+      const updateResult = db(
+        "UPDATE orders SET status = ? WHERE id = ?",
+        ['paid', orderId]
+      );
 
       // 4. Get product/variant info for stock allocation
-      const [product] = db`SELECT * FROM products WHERE id = ?`, [order.product_id];
+      const productResult = db(
+        "SELECT * FROM products WHERE id = ?",
+        [order.product_id]
+      ) || [];
+      const product = productResult && productResult[0];
       if (!product) {
         throw new Error("Product not found");
       }
 
-      const [variant] = db`
-        SELECT * FROM product_variants 
-        WHERE id = ? AND stock > 0
-      `, [order.variant_id];
+      const variantResult = db(
+        "SELECT * FROM product_variants WHERE id = ? AND stock > 0",
+        [order.variant_id]
+      ) || [];
+      const variant = variantResult && variantResult[0];
 
       if (!variant) {
         throw new Error("Variant not found or out of stock");
@@ -82,10 +85,10 @@ export async function POST(request: NextRequest) {
       );
 
       // 6. Create audit log entry for payment approval
-      db.prepare(`
-        INSERT INTO audit_logs (event_type, entity_type, entity_id, created_at)
-        VALUES (?, ?, ?, datetime('now'))
-      `).run(["payment_approved", "order", orderId]);
+      db(
+        "INSERT INTO audit_logs (event_type, entity_type, entity_id, created_at) VALUES (?, ?, ?, datetime('now'))",
+        ['payment_approved', 'order', orderId]
+      );
 
       // 7. Queue Brevo email with claim code
       // In real implementation, this would call email service
@@ -144,13 +147,11 @@ export async function GET() {
     // Require admin
     await requireAdmin();
 
-    const [stats] = await db`
-      SELECT 
-        COUNT(*) as total_orders,
-        SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_count,
-        SUM(CASE WHEN status = 'pending_payment' THEN 1 ELSE 0 END) as pending_count
-      FROM orders
-    `;
+    const statsResult = db(
+      "SELECT COUNT(*) as total_orders, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as paid_count, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count FROM orders",
+      ['paid', 'pending_payment']
+    ) || [];
+    const stats = (statsResult && statsResult[0]) || { total_orders: 0, paid_count: 0, pending_count: 0 };
 
     return NextResponse.json({ stats: (stats as any) || { total_orders: 0, paid_count: 0, pending_count: 0 } });
   } catch (error) {
