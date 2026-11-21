@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Verify OTP and get user ID from D1
     const { verifyOtp } = await import("@/lib/auth/otp");
-    const { getUserById, getUserByEmail } = await import("@/lib/db/d1/users");
+    const { getUserByEmail } = await import("@/lib/db/d1/users");
     
     const result = await verifyOtp({ purpose, code });
     
@@ -46,21 +46,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create user in D1
-    let userId = null;
-    
-    try {
-      const [existingUser] = await getUserByEmail(result.email); // Will be set by verifyOtp
-      
-      if (existingUser) {
-        userId = existingUser.id;
-      } else {
-        // Create new user for sign-up flow
-        // This would be called after successful OTP verification
-      }
-    } catch {
-      // Fallback: use Auth0/PostgreSQL temporarily for now
-      // TODO: Remove this block once D1 is fully migrated
+    let existingUser = await getUserByEmail(result.email);
+    if (!existingUser && purpose === "sign_up") {
+      const { createUser } = await import("@/lib/db/d1/users");
+      existingUser = await createUser({ email: result.email });
     }
+    const userId = existingUser?.id;
 
     // Create session token
     const { createAndSetSession } = await import("@/lib/auth/session");
@@ -75,10 +66,14 @@ export async function POST(request: NextRequest) {
     const tokenHash = await createAndSetSession({ userId });
 
     // Set HttpOnly cookie
-    const response = NextResponse.redirect("/account");
-    
-    // In production, the actual token hash is set here via:
-    // response.cookies.set("auth_session_token", tokenHash);
+    const response = NextResponse.json({ success: true });
+    response.cookies.set("auth_session_token", tokenHash, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
     
     return response;
   } catch (error) {

@@ -8,7 +8,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  if (!isAuthConfigured() || !isDatabaseConfigured()) return <div className="page-content"><EmptyState title="Operations are unavailable." description="Administrator access is not available at this time." /></div>;
+  if (!isCustomAuthConfigured() || !isDatabaseConfigured()) return <div className="page-content"><EmptyState title="Operations are unavailable." description="Administrator access is not available at this time." /></div>;
   try {
     await requireAdmin();
   } catch (error) {

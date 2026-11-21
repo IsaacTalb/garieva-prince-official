@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { getProductById } from "./d1/products";
+import { getDatabase } from "./client";
+import { getProductById } from "./products";
 
 type NfcTag = {
   id: string;

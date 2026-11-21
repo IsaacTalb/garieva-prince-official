@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 export const metadata = { title: "Operations" };
 export default async function AdminPage() {
   // Recheck at the page boundary; layouts are not a substitute for authorization.
-  if (!isAuthConfigured() || !isDatabaseConfigured()) return null;
+  if (!isCustomAuthConfigured() || !isDatabaseConfigured()) return null;
   try {
     await requireAdmin();
   } catch (error) {

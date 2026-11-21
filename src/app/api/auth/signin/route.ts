@@ -46,19 +46,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set cookie with OTP ID for debugging (not the actual code)
-    const response = NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Verification code sent. Check your email.",
     });
-
-    // Set HttpOnly cookie for session token placeholder
-    response.headers.set(
-      "Set-Cookie",
-      `auth_session_token_placeholder=not_set_yet; Path=/; HttpOnly; SameSite=Lax; Secure`
-    );
-
-    return response;
   } catch (error) {
     console.error("Sign in error:", error);
     
@@ -132,12 +123,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Only admin can see full status (check would go here in production)
     return NextResponse.json({
-      email: otpStatus.email,
-      purpose: otpStatus.purpose,
-      expiresAt: otpStatus.expires_at,
-      attemptCount: otpStatus.attempt_count,
+      expiresAt: otpStatus.expiresAt,
+      attemptCount: otpStatus.attemptCount,
     });
   } catch (error) {
     console.error("Get OTP status error:", error);

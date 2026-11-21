@@ -1,6 +1,6 @@
 import "server-only";
 import { getDatabase } from "./client";
-import { appUserSchema, type AppUser } from "@/schemas/user";
+import { appUserSchema, profileSchema, type AppUser } from "@/schemas/user";
 
 /**
  * User Repository - D1-backed custom authentication
@@ -17,17 +17,25 @@ type CreateUserData = {
   avatar_url?: string | null;
 };
 
+function parseUserRow(row: Record<string, unknown>): AppUser {
+  return appUserSchema.parse({
+    ...row,
+    display_name: row.display_name ?? row.name ?? null,
+    profile_visibility:
+      row.profile_visibility ??
+      (Number(row.show_profile_publicly) === 1 ? "public" : "private"),
+  });
+}
+
 /**
  * Get a user by ID
  */
 export async function getUserById(userId: string): Promise<AppUser | null> {
   const db = getDatabase();
   const rows = await db`SELECT * FROM users WHERE id = ${userId}`;
-  
   if (!rows[0]) return null;
-  
   try {
-    return AppUserSchema.parse(rows[0]);
+    return parseUserRow(rows[0]);
   } catch (error) {
     throw new Error(`Invalid user data for ${userId}: ${(error as Error).message}`);
   }
@@ -39,11 +47,9 @@ export async function getUserById(userId: string): Promise<AppUser | null> {
 export async function getUserByEmail(email: string): Promise<AppUser | null> {
   const db = getDatabase();
   const rows = await db`SELECT * FROM users WHERE lower(email) = lower(${email})`;
-  
   if (!rows[0]) return null;
-  
   try {
-    return AppUserSchema.parse(rows[0]);
+    return parseUserRow(rows[0]);
   } catch (error) {
     throw new Error(`Invalid user data for ${email}: ${(error as Error).message}`);
   }
@@ -78,28 +84,16 @@ export async function createUser({
   avatar_url,
 }: CreateUserData): Promise<AppUser> {
   const db = getDatabase();
-  
-  // Clean up any existing account with this email to prevent duplicates
-  await db`DELETE FROM users WHERE lower(email) = lower(${email})`;
-  
   const [result] = await db`
-    INSERT INTO users (id, email, name, username, phone, avatar_url, created_at, updated_at)
-    VALUES (${generateUserId(email)}, ${email}, ${name}, ${username}, ${phone}, ${avatar_url}, datetime('now'), datetime('now'))
-    RETURNING id, email, name as display_name, username, phone, avatar_url, profile_visibility, created_at, updated_at
+    INSERT INTO users (id, email, name, username, phone, avatar_url)
+    VALUES (${crypto.randomUUID()}, ${email}, ${name}, ${username}, ${phone}, ${avatar_url})
+    RETURNING *
   `;
-  
   try {
-    return AppUserSchema.parse(result);
+    return parseUserRow(result);
   } catch (error) {
     throw new Error(`Invalid user data: ${(error as Error).message}`);
   }
-}
-
-/**
- * Generate unique user ID from email prefix + timestamp
- */
-function generateUserId(email: string): string {
-  return `${email.substring(0, 6)}_${Date.now()}`;
 }
 
 /**
@@ -119,21 +113,51 @@ export async function updateUser({
   avatar_url?: string | null;
 }): Promise<AppUser | null> {
   const db = getDatabase();
-  
   const [result] = await db`
     UPDATE users
-    SET name = ${name ?? "null"}, username = ${username ?? "null"}, phone = ${phone ?? "null"}, avatar_url = ${avatar_url ?? "null"}
+    SET name = CASE WHEN ${name !== undefined} THEN ${name ?? null} ELSE name END,
+        username = CASE WHEN ${username !== undefined} THEN ${username ?? null} ELSE username END,
+        phone = CASE WHEN ${phone !== undefined} THEN ${phone ?? null} ELSE phone END,
+        avatar_url = CASE WHEN ${avatar_url !== undefined} THEN ${avatar_url ?? null} ELSE avatar_url END,
+        updated_at = datetime('now')
     WHERE id = ${userId}
-    RETURNING id, email, name as display_name, username, phone, avatar_url, profile_visibility, created_at, updated_at
+    RETURNING *
   `;
-  
   if (!result) return null;
-  
   try {
-    return AppUserSchema.parse(result);
+    return parseUserRow(result);
   } catch (error) {
     throw new Error(`Invalid user data after update: ${(error as Error).message}`);
   }
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: unknown,
+): Promise<AppUser | null> {
+  const profile = profileSchema.parse(input);
+  const db = getDatabase();
+  const [result] = await db`
+    UPDATE users
+    SET name = ${profile.display_name},
+        username = ${profile.username},
+        phone = ${profile.phone},
+        bio = ${profile.bio},
+        instagram_url = ${profile.instagram_url},
+        facebook_url = ${profile.facebook_url},
+        tiktok_url = ${profile.tiktok_url},
+        telegram_url = ${profile.telegram_url},
+        show_profile_publicly = ${profile.show_profile_publicly ? 1 : 0},
+        show_avatar_publicly = ${profile.show_avatar_publicly ? 1 : 0},
+        show_instagram = ${profile.show_instagram ? 1 : 0},
+        show_facebook = ${profile.show_facebook ? 1 : 0},
+        show_tiktok = ${profile.show_tiktok ? 1 : 0},
+        show_telegram = ${profile.show_telegram ? 1 : 0},
+        updated_at = datetime('now')
+    WHERE id = ${userId}
+    RETURNING *
+  `;
+  return result ? parseUserRow(result) : null;
 }
 
 /**
@@ -145,27 +169,19 @@ export async function getAllUsers(options?: {
 }): Promise<{ rows: AppUser[]; total: number }> {
   const db = getDatabase();
   
-  let query = `SELECT COUNT(*) as total FROM users`;
-  if (options?.limit || options?.offset) {
-    query += ` LIMIT ${options.limit ?? 50} OFFSET ${options.offset ?? 0}`;
-  }
-  
-  const [count] = await db`${query}`;
+  const [count] = await db`SELECT COUNT(*) as total FROM users`;
   const total = typeof count.total === "number" ? count.total : 0;
-  
-  let rows: { id: string; email: string; name?: string | null; username?: string | null; phone?: string | null; avatar_url?: string | null; profile_visibility: string; created_at: string; updated_at: string }[] = [];
-  
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 200));
+  const offset = Math.max(0, options?.offset ?? 0);
+  let rows;
   if (options?.limit || options?.offset) {
-    const limit = options.limit ?? 50;
-    const offset = options.offset ?? 0;
     rows = await db`SELECT * FROM users LIMIT ${limit} OFFSET ${offset}`;
   } else {
     rows = await db`SELECT * FROM users`;
   }
-  
   try {
     return {
-      rows: rows.map(row => AppUserSchema.parse(row)),
+      rows: rows.map(parseUserRow),
       total,
     };
   } catch (error) {

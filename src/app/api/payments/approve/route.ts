@@ -1,135 +1,133 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/session";
-import { getDatabase } from "@/lib/db/d1/client";
+import { getDatabase, transaction } from "@/lib/db/d1/client";
 import { generateClaimCode } from "@/lib/db/d1/ownership_claim_codes";
+
+type DatabaseRow = Record<string, unknown>;
+
+function queryFirst(
+  database: ReturnType<typeof getDatabase>,
+  query: string,
+  params: unknown[] = []
+): DatabaseRow | null {
+  const statement = database.prepare(query);
+  try {
+    statement.bind(params);
+    return statement.step() ? statement.getAsObject() : null;
+  } finally {
+    statement.free();
+  }
+}
+
+function execute(
+  database: ReturnType<typeof getDatabase>,
+  query: string,
+  params: unknown[] = []
+): number {
+  const statement = database.prepare(query);
+  try {
+    statement.run(params);
+    return database.getRowsModified();
+  } finally {
+    statement.free();
+  }
+}
 
 /**
  * POST /api/payments/approve
- * 
- * Admin endpoint to approve payment proof and allocate physical product.
- * Handles idempotent approval transaction with claim code generation.
+ * Approve payment proof and allocate a claim code to the order.
  */
 export async function POST(request: NextRequest) {
   try {
-    // Require admin authorization
-    const admin = await requireAdmin();
-    if (!admin) {
+    if (!(await requireAdmin())) {
       return NextResponse.json(
-        { error: "Admin access required", status: 403 },
+        { error: "Admin access required" },
         { status: 403 }
       );
     }
 
-    // Parse request body
-    const { orderId, notes }: { orderId: string; notes?: string } = await request.json();
+    const body: unknown = await request.json();
+    const orderId =
+      typeof body === "object" && body !== null && "orderId" in body
+        ? body.orderId
+        : undefined;
 
-    if (!orderId) {
+    if (typeof orderId !== "string" || !orderId.trim()) {
       return NextResponse.json(
         { error: "Order ID is required" },
         { status: 400 }
       );
     }
 
-    // Get D1 database
-    const db = getDatabase();
-
-    // Begin transaction (SQLite compatible)
-    await db.transaction(() => {
-      // 1. Check if order exists and has payment proof
-      const result = db(
-        "SELECT * FROM orders WHERE id = ? AND status IN (?)",
-        [orderId, 'pending_payment', 'payment_proof_uploaded']
+    const database = getDatabase();
+    const approval = await transaction(async () => {
+      const order = queryFirst(
+        database,
+        "SELECT id, status, product_id, product_name, variant_id FROM orders WHERE id = ? AND status IN (?, ?)",
+        [orderId, "pending_payment", "payment_proof_uploaded"]
       );
-      const order = result && result[0];
 
       if (!order) {
         throw new Error("Order not found or already processed");
       }
 
-      // 2. Check if order is already paid (idempotency check)
-      if (order.status === "paid" || order.status === "processing") {
-        throw new Error("Order has already been approved");
-      }
-
-      // 3. Approve payment and update order status
-      const updateResult = db(
-        "UPDATE orders SET status = ? WHERE id = ?",
-        ['paid', orderId]
-      );
-
-      // 4. Get product/variant info for stock allocation
-      const productResult = db(
-        "SELECT * FROM products WHERE id = ?",
-        [order.product_id]
-      ) || [];
-      const product = productResult && productResult[0];
+      const product = queryFirst(database, "SELECT id, name FROM products WHERE id = ?", [
+        order.product_id,
+      ]);
       if (!product) {
         throw new Error("Product not found");
       }
 
-      const variantResult = db(
-        "SELECT * FROM product_variants WHERE id = ? AND stock > 0",
+      const variant = queryFirst(
+        database,
+        "SELECT id, sku AS serial FROM product_variants WHERE id = ? AND stock > 0",
         [order.variant_id]
-      ) || [];
-      const variant = variantResult && variantResult[0];
-
+      );
       if (!variant) {
         throw new Error("Variant not found or out of stock");
       }
 
-      // 5. Allocate physical product item (create ownership link)
-      // In real implementation, this would query NFC tags or claim codes
+      const changed = execute(
+        database,
+        "UPDATE orders SET status = ? WHERE id = ? AND status IN (?, ?)",
+        ["paid", orderId, "pending_payment", "payment_proof_uploaded"]
+      );
+      if (changed !== 1) {
+        throw new Error("Order has already been approved");
+      }
+
+      const serial = String(variant.serial || `GP${order.id}`);
       const claimedCode = await generateClaimCode(
-        order.product_id,
-        variant.serial || `GP${order.id}`
+        String(order.product_id),
+        serial
       );
 
-      // 6. Create audit log entry for payment approval
-      db(
+      execute(
+        database,
         "INSERT INTO audit_logs (event_type, entity_type, entity_id, created_at) VALUES (?, ?, ?, datetime('now'))",
-        ['payment_approved', 'order', orderId]
-      );
-
-      // 7. Queue Brevo email with claim code
-      // In real implementation, this would call email service
-      console.log(
-        `[EMAIL] Claim code ${claimedCode.id} generated for order ${orderId}`
+        ["payment_approved", "order", orderId]
       );
 
       return {
-        success: true,
         orderId,
         productId: product.id,
         productName: product.name,
         variantId: variant.id,
-        serial: variant.serial || claimedCode.product_item_id,
         claimCodeId: claimedCode.id,
-        claimCodeHash: claimedCode.code_hash, // Only hash, never plaintext
-        emailQueued: true,
+        emailQueued: false,
       };
-    })();
+    });
+
+    return NextResponse.json({ success: true, ...approval }, { status: 200 });
+  } catch (error) {
+    console.error("Payment approval error:", error);
 
     return NextResponse.json(
       {
-        success: true,
-        orderId,
-        productId: order.product_id,
-        productName: order.product_name,
-        claimCodeId: "claim_generated", // Would be actual ID in real impl
-        emailQueued: true,
-      },
-      { status: 200 }
-    );
-
-  } catch (error) {
-    console.error("Payment approval error:", error);
-    
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : "Payment approval failed",
-        details: process.env.NODE_ENV === "development" 
-          ? String(error) 
-          : undefined,
+        error:
+          error instanceof Error ? error.message : "Payment approval failed",
+        details:
+          process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -138,22 +136,26 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/payments/approve/stats
- * Admin endpoint to get approval statistics
+ * Admin endpoint to get approval statistics.
  */
 export async function GET() {
   try {
-    const db = getDatabase();
-    
-    // Require admin
-    await requireAdmin();
+    if (!(await requireAdmin())) {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
+    }
 
-    const statsResult = db(
-      "SELECT COUNT(*) as total_orders, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as paid_count, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count FROM orders",
-      ['paid', 'pending_payment']
-    ) || [];
-    const stats = (statsResult && statsResult[0]) || { total_orders: 0, paid_count: 0, pending_count: 0 };
+    const database = getDatabase();
+    const stats =
+      queryFirst(
+        database,
+        "SELECT COUNT(*) AS total_orders, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS paid_count, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending_count FROM orders",
+        ["paid", "pending_payment"]
+      ) ?? { total_orders: 0, paid_count: 0, pending_count: 0 };
 
-    return NextResponse.json({ stats: (stats as any) || { total_orders: 0, paid_count: 0, pending_count: 0 } });
+    return NextResponse.json({ stats });
   } catch (error) {
     console.error("Error getting approval stats:", error);
     return NextResponse.json(

@@ -65,8 +65,10 @@ type EmailVerificationCode = {
 /**
  * Clean up expired OTP codes for rate limiting before creating new one
  */
-async function cleanupExpiredOtps(email: string, purpose: "sign_in" | "sign_up"): Promise<void> {
-  const now = new Date().toISOString();
+async function cleanupExpiredOtps(
+  email: string,
+  purpose: "sign_in" | "sign_up" | "change_email"
+): Promise<void> {
   const db = getDatabase();
   
   // Delete expired consumed codes
@@ -152,7 +154,7 @@ export async function verifyOtp({
   purpose: "sign_in" | "sign_up" | "change_email";
   code: string;
   email?: string;
-}): Promise<{ verified: true } | { verified: false; error: string }> {
+}): Promise<{ verified: true; email: string } | { verified: false; error: string }> {
   const db = getDatabase();
   
   // Find active OTP for this email and purpose
@@ -187,7 +189,7 @@ export async function verifyOtp({
     // Mark OTP as consumed
     await db`UPDATE email_verification_codes SET consumed_at = datetime('now') WHERE id = ${codeRow.id}`;
     
-    return { verified: true };
+    return { verified: true, email };
   }
   
   // If no email provided, query all active OTPs for this purpose (fallback)

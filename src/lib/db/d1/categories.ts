@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { requireAdminAccess } from "./d1/admin";
+import { getDatabase } from "./client";
+import { requireAdminAccess } from "./admin";
 
 export type Category = {
   id: string;
@@ -17,7 +17,7 @@ type CreateCategoryInput = {
   name: string;
   slug: string;
   description?: string | null;
-  parent_id?: string | null;
+  parentId?: string | null;
   sortOrder?: number;
 };
 
@@ -147,11 +147,11 @@ export async function createCategory({
   // Generate ID if not provided
   const id = `CAT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   
-  await db`
+  const [created] = await db`
     INSERT INTO categories (id, parent_id, name, slug, description, sort_order, is_active, created_at)
     VALUES (${id}, ${parentId}, ${name}, ${slug}, ${description ?? null}, 
             COALESCE(${sortOrder}, 0), 1, datetime('now'))
-    RETURNING id, parent_id, name, slug, description, sort_order, is_active, created_at
+    RETURNING created_at
   `;
   
   return {
@@ -162,7 +162,7 @@ export async function createCategory({
     description: description ?? undefined,
     sort_order: sortOrder ?? 0,
     is_active: true,
-    created_at: (await db`SELECT created_at FROM categories WHERE id = ${id}`).created_at!,
+    created_at: created?.created_at,
   };
 }
 

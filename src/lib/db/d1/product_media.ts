@@ -1,6 +1,7 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { uploadMedia, deleteObjectFromR2 } from "@/lib/r2/media";
+import { getDatabase } from "./client";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getR2, getR2Configuration } from "@/lib/r2/client";
 
 export type MediaItem = {
   product_id: string;
@@ -97,32 +98,28 @@ export async function uploadProductMedia({
   const objectKey = `garieva-prince/media/products/${productId}/${timestamp}-${randomSuffix}.img`;
   
   // Upload to R2
-  const uploadResult = await uploadMedia({
-    objectKey,
-    contentType,
-    content,
-    isPrivate: false, // Product media is public
-  });
-  
-  if (!uploadResult.url) {
-    throw new Error("Failed to get URL from R2");
-  }
+  const config = getR2Configuration();
+  await getR2().send(
+    new PutObjectCommand({
+      Bucket: config.R2_PUBLIC_BUCKET_NAME,
+      Key: objectKey,
+      ContentType: contentType,
+      Body: new Uint8Array(content),
+    })
+  );
+  const url = `${config.R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${objectKey}`;
   
   // Store reference in D1
-  try {
-    await db`
-      INSERT INTO product_media (product_id, object_key, alt_text, position, created_at)
-      VALUES (${productId}, ${objectKey}, ${altText}, ${position}, datetime('now'))
-      ON CONFLICT(product_id, object_key) DO UPDATE SET
-        alt_text = excluded.alt_text,
-        position = excluded.position
-    `;
-  } catch (error) {
-    // If duplicate, that's ok - might be idempotent upload
-  }
+  await db`
+    INSERT INTO product_media (product_id, object_key, alt_text, position, created_at)
+    VALUES (${productId}, ${objectKey}, ${altText}, ${position}, datetime('now'))
+    ON CONFLICT(product_id, object_key) DO UPDATE SET
+      alt_text = excluded.alt_text,
+      position = excluded.position
+  `;
   
   return {
-    url: uploadResult.url,
+    url,
     key: objectKey,
   };
 }
@@ -133,10 +130,14 @@ export async function uploadProductMedia({
 export async function deleteProductMedia(productId: string, objectKey: string): Promise<void> {
   const db = getDatabase();
   
-  // Delete from R2
-  if (await deleteObjectFromR2(objectKey)) {
-    await db`DELETE FROM product_media WHERE product_id = ${productId} AND object_key = ${objectKey}`;
-  }
+  const config = getR2Configuration();
+  await getR2().send(
+    new DeleteObjectCommand({
+      Bucket: config.R2_PUBLIC_BUCKET_NAME,
+      Key: objectKey,
+    })
+  );
+  await db`DELETE FROM product_media WHERE product_id = ${productId} AND object_key = ${objectKey}`;
 }
 
 /**
@@ -148,11 +149,15 @@ export async function deleteProductAllMedia(productId: string): Promise<void> {
   // Get all media keys for this product
   const rows = await db`SELECT object_key FROM product_media WHERE product_id = ${productId}`;
   
-  // Delete from R2 and database
+  const config = getR2Configuration();
   for (const row of rows) {
-    if (await deleteObjectFromR2(row.object_key)) {
-      await db`DELETE FROM product_media WHERE product_id = ${productId} AND object_key = ${row.object_key}`;
-    }
+    await getR2().send(
+      new DeleteObjectCommand({
+        Bucket: config.R2_PUBLIC_BUCKET_NAME,
+        Key: row.object_key,
+      })
+    );
+    await db`DELETE FROM product_media WHERE product_id = ${productId} AND object_key = ${row.object_key}`;
   }
 }
 

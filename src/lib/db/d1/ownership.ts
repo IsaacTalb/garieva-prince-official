@@ -1,6 +1,52 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { AppUserSchema, type AppUser } from "@/schemas/user";
+import { getDatabase } from "./client";
+import { appUserSchema, type AppUser } from "@/schemas/user";
+
+export type WardrobeItem = {
+  product_item_id: string;
+  product_name: string;
+  product_slug: string;
+  serial_number: string;
+  variant_size: string | null;
+  variant_color: string | null;
+  owned_since: string;
+  acquisition_type: string;
+  nfc_status: string | null;
+};
+
+export async function getUserWardrobe(userId: string): Promise<WardrobeItem[]> {
+  const db = getDatabase();
+  const rows = await db`
+    SELECT
+      pi.id AS product_item_id,
+      p.name AS product_name,
+      p.slug AS product_slug,
+      pi.serial_number,
+      pv.size AS variant_size,
+      pv.color_name AS variant_color,
+      o.started_at AS owned_since,
+      o.acquisition_type,
+      nt.provisioning_status AS nfc_status
+    FROM ownerships o
+    JOIN product_items pi ON pi.id = o.product_item_id
+    JOIN products p ON p.id = pi.product_id
+    LEFT JOIN product_variants pv ON pv.id = pi.variant_id
+    LEFT JOIN nfc_tags nt ON nt.product_item_id = pi.id
+    WHERE o.user_id = ${userId} AND o.is_current = 1
+    ORDER BY o.started_at DESC, pi.serial_number ASC
+  `;
+  return rows.map((row) => ({
+    product_item_id: String(row.product_item_id),
+    product_name: String(row.product_name),
+    product_slug: String(row.product_slug),
+    serial_number: String(row.serial_number),
+    variant_size: row.variant_size == null ? null : String(row.variant_size),
+    variant_color: row.variant_color == null ? null : String(row.variant_color),
+    owned_since: String(row.owned_since),
+    acquisition_type: String(row.acquisition_type),
+    nfc_status: row.nfc_status == null ? null : String(row.nfc_status),
+  }));
+}
 
 /**
  * Get current ownership for a product item
@@ -25,7 +71,7 @@ export async function getCurrentOwnership(productItemId: string): Promise<{
   
   try {
     const parsedUser = rows[0].user_display_name ? 
-      AppUserSchema.parse(rows[0] as unknown as any) : null;
+      appUserSchema.parse(rows[0]) : null;
     
     return {
       user_id: rows[0].user_id,

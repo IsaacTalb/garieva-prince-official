@@ -123,6 +123,27 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .profile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
 .profile-fields dt { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
 .profile-fields dd { margin: 0; font-size: 14px; }
+.account-quick-links,.form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.account-signout { margin-top: 20px; }
+.sign-in-form form { display: grid; gap: 18px; }
+.sign-in-form label { display: grid; gap: 8px; font-size: 13px; font-weight: 500; }
+.sign-in-form input,.sign-in-form select { min-height: 42px; width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+.form-message { min-height: 1.5em; color: var(--muted); font-size: 13px; }
+.profile-form { display: grid; gap: 20px; }
+.profile-form label { display: grid; gap: 8px; font-size: 13px; font-weight: 500; }
+.profile-form input:not([type=checkbox]),.profile-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+.profile-form fieldset { display: grid; gap: 16px; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.profile-form legend { padding: 0 6px; font-size: 14px; font-weight: 600; }
+.checkbox-field { display: flex !important; grid-template-columns: auto 1fr; align-items: center; }
+.social-profile-field { display: grid; gap: 10px; }
+.form-hint,.form-actions p { color: var(--muted); font-size: 12px; }
+.form-actions p { margin: 0; }
+.account-record-list { display: grid; gap: 16px; }
+.account-record { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; }
+.account-record h2 { text-transform: capitalize; }
+.account-record dl { display: grid; grid-template-columns: repeat(2,minmax(120px,1fr)); gap: 16px; margin: 0; }
+.account-record dt { color: var(--muted); font-size: 12px; }
+.account-record dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 14px; }
 .admin-shell { display: flex; min-height: 100svh; background: white; }
 .admin-sidebar { width: 256px; border-right: 1px solid var(--line); flex-shrink: 0; }
 .admin-sidebar-brand { height: 56px; padding: 18px 16px; display: block; border-bottom: 1px solid var(--line); font-size: 18px; font-weight: 700; }

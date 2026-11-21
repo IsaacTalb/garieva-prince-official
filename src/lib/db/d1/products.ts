@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { PublicProductSchema, type PublicProduct } from "@/schemas/catalog";
+import { getDatabase } from "./client";
+import { publicProductSchema, type PublicProduct } from "@/schemas/catalog";
 
 /**
  * Get a product by ID
@@ -23,7 +23,7 @@ export async function getProductById(productId: string): Promise<PublicProduct |
   if (!rows[0]) return null;
   
   try {
-    return PublicProductSchema.parse({ ...rows[0], image_url: null });
+    return publicProductSchema.parse({ ...rows[0], image_url: null });
   } catch (error) {
     throw new Error(`Invalid product data for ${productId}: ${(error as Error).message}`);
   }
@@ -50,7 +50,7 @@ export async function getProductBySlug(slug: string): Promise<PublicProduct | nu
   if (!rows[0]) return null;
   
   try {
-    return PublicProductSchema.parse({ ...rows[0], image_url: null });
+    return publicProductSchema.parse({ ...rows[0], image_url: null });
   } catch (error) {
     throw new Error(`Invalid product data for slug ${slug}: ${(error as Error).message}`);
   }
@@ -90,7 +90,7 @@ export async function getPublishedProducts(options?: {
   if (options?.offset) offset = options.offset;
   
   // Calculate total count first
-  const countQuery = query.replace("SELECT", "SELECT COUNT(*) as c FROM (", "") + 
+  const countQuery = query.replace("SELECT", "SELECT COUNT(*) as c FROM (") +
     ` GROUP BY p.id ORDER BY p.created_at DESC, p.id DESC LIMIT ${limit ?? 50} OFFSET ${offset ?? 0}) t`;
   
   const [countResult] = await db`${countQuery}`;
@@ -102,14 +102,14 @@ export async function getPublishedProducts(options?: {
     const rows = await db`${query}`;
     
     try {
-      return { rows: rows.map(row => PublicProductSchema.parse({ ...row, image_url: null })), total };
+      return { rows: rows.map(row => publicProductSchema.parse({ ...row, image_url: null })), total };
     } catch (error) {
       throw new Error(`Invalid product data in list: ${(error as Error).message}`);
     }
   } else {
     const rows = await db`${query} ORDER BY p.created_at DESC, p.id DESC LIMIT 48`;
     try {
-      return { rows: rows.map(row => PublicProductSchema.parse({ ...row, image_url: null })), total };
+      return { rows: rows.map(row => publicProductSchema.parse({ ...row, image_url: null })), total };
     } catch (error) {
       throw new Error(`Invalid product data in list: ${(error as Error).message}`);
     }
@@ -192,7 +192,7 @@ export async function softDeleteProduct(productId: string): Promise<void> {
 export async function getProductTotalStock(productId: string): Promise<number> {
   const db = getDatabase();
   
-  const result = await db`
+  const [result] = await db`
     SELECT COALESCE(SUM(stock), 0) as total_stock FROM products 
     WHERE id = ${productId} AND is_active = 1 AND deleted_at IS NULL
   `;

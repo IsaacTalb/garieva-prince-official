@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 import { requireUser } from "@/lib/auth/session";
 
 export type CartItem = {

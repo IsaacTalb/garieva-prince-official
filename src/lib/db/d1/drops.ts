@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 
 type DropData = {
   id?: string;
@@ -80,8 +80,8 @@ export async function createDrop({
   try {
     const [result] = await db`
       INSERT INTO drops (id, collection_id, name, slug, description, status, opens_at, closes_at, created_at, updated_at)
-      VALUES (${generateDropId()}, ${collection_id}, ${name}, ${slug}, ${description}, ${status}, 
-              ${opens_at ?? "null"}, ${closes_at ?? "null"}, datetime('now'), datetime('now'))
+      VALUES (${crypto.randomUUID()}, ${collection_id}, ${name}, ${slug}, ${description}, ${status},
+              ${opens_at ?? null}, ${closes_at ?? null}, datetime('now'), datetime('now'))
       RETURNING *
     `;
     
@@ -109,7 +109,7 @@ export async function updateDrop({
   name?: string | null;
   slug?: string | null;
   description?: string | null;
-  status?: "draft" | "scheduled" | "active" | "closed" | null;
+  status?: "draft" | "scheduled" | "active" | "closed" | "archived" | "published" | null;
   opens_at?: string | null;
   closes_at?: string | null;
 }): Promise<Drop | null> {
@@ -244,7 +244,7 @@ export async function getDropProducts({
   const db = getDatabase();
   
   // First get the product count
-  const countResult = await db`
+  const [countResult] = await db`
     SELECT COUNT(*) as c FROM products p
     INNER JOIN drop_products dp ON p.id = dp.product_id
     WHERE dp.drop_id = ${dropId} AND p.deleted_at IS NULL AND p.status = 'published'
@@ -314,7 +314,11 @@ export async function createDropProduct({
     return result;
   } catch (error) {
     // Handle duplicate constraint gracefully
-    return { id: generateDropProductId(dropId, productId) };
+    throw new Error(
+      `Failed to create drop product relation: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 

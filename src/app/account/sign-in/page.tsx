@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageIntro } from "@/components/shared/page-intro";
+import { SignInForm } from "@/components/account/sign-in-form";
 
 export const metadata = { title: "Sign in" };
 
@@ -11,14 +12,7 @@ export default function SignInPage() {
       </PageIntro>
       <section className="page-content">
         <div className="content-card" style={{ maxWidth: 520, marginInline: "auto" }}>
-          <form>
-            <label>
-              Email address
-              <input name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
-            </label>
-            <button type="submit" className="primary-link" disabled>Continue</button>
-          </form>
-          <p>Brevo OTP delivery and D1 session endpoints are being connected in the next implementation step.</p>
+          <SignInForm />
           <Link href="/">Return to store</Link>
         </div>
       </section>

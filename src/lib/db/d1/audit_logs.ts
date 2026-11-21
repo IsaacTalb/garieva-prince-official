@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 
 type AuditLog = {
   id: string;

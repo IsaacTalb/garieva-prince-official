@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 
 type Order = {
   id: string;
@@ -59,40 +59,24 @@ export async function getUserOrders(userId: string, options?: {
   offset?: number;
 }): Promise<{ rows: Order[]; total: number }> {
   const db = getDatabase();
-  
-  let query = `
-    SELECT id, order_number, customer_name, customer_email, customer_phone, 
-           total_amount, status, payment_status, created_at, updated_at
-    FROM orders
-    WHERE user_id = ${userId} OR (user_id IS NULL AND customer_email LIKE ?)
+  const limit = Math.max(1, Math.min(options?.limit ?? 50, 100));
+  const offset = Math.max(0, options?.offset ?? 0);
+  const [count] = await db`
+    SELECT COUNT(*) AS total FROM orders WHERE user_id = ${userId}
   `;
-  
-  let limit: number | undefined;
-  let offset: number | undefined;
-  
-  if (options?.limit) limit = options.limit;
-  if (options?.offset) offset = options.offset;
-  
-  // Calculate total count
-  const countQuery = query.replace("SELECT", "SELECT COUNT(*) as c FROM (", "") + 
-    ` LIMIT ${limit ?? 50} OFFSET ${offset ?? 0}) t`;
-  
-  const [countResult] = await db`${countQuery}`;
-  const total = typeof countResult.c === "number" ? countResult.c : 0;
-  
-  // Get actual rows
-  if (limit || offset) {
-    query += ` LIMIT ${limit} OFFSET ${offset}`;
-    const rows = await db`${query}`;
-    
-    return {
-      rows: rows.map(parseOrder),
-      total,
-    };
-  } else {
-    const rows = await db`${query} ORDER BY created_at DESC LIMIT 50`;
-    return { rows: rows.map(parseOrder), total };
-  }
+  const rows = await db`
+    SELECT id, order_number, user_id, customer_name, customer_email,
+           customer_phone, total_amount, status, payment_status, courier,
+           tracking_number, created_at, updated_at
+    FROM orders
+    WHERE user_id = ${userId}
+    ORDER BY created_at DESC, id DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  return {
+    rows: rows.map(parseOrder),
+    total: Number(count?.total ?? 0),
+  };
 }
 
 /**
@@ -233,8 +217,16 @@ export async function removeFromOrder(orderId: string, itemIds: string[]): Promi
   const db = getDatabase();
   
   if (itemIds.length === 0) return;
-  
-  await db`DELETE FROM order_items WHERE id IN ${db.joinValues(itemIds)}`;
+
+  const placeholders = itemIds.map(() => "?").join(", ");
+  const statement = db.prepare(
+    `DELETE FROM order_items WHERE order_id = ? AND id IN (${placeholders})`
+  );
+  try {
+    statement.run([orderId, ...itemIds]);
+  } finally {
+    statement.free();
+  }
 }
 
 /**

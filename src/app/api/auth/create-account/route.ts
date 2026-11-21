@@ -6,6 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createAndSetSession } from "@/lib/auth/session";
+import { createUser } from "@/lib/db/d1/users";
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Email is required (passed via D1 session lookup)
-    if (!email) {
+    if (typeof email !== "string" || !email.trim()) {
       return NextResponse.json(
         { error: "Email is required", code: "MISSING_EMAIL" },
         { status: 400 }
@@ -30,8 +32,6 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase();
 
     // Create user in D1 with optional profile fields
-    const { createUser, getDatabase } = await import("@/lib/db/d1/client");
-    
     const result = await createUser({
       email: normalizedEmail,
       name: display_name || name,
@@ -41,8 +41,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Set session cookie for authenticated user
-    const { createAndSetSession } = await import("@/lib/auth/session");
-    
     const tokenHash = await createAndSetSession({ userId: result.id });
 
     // Set HttpOnly cookie
@@ -69,46 +67,6 @@ export async function POST(request: NextRequest) {
     // Generic error to prevent information leakage
     return NextResponse.json(
       { error: "Failed to create account", code: "INTERNAL_ERROR" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Create admin role for new user (admin action only)
- */
-export async function POSTAdmin(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { email, userId, role } = body;
-
-    if (!email || !userId || !role) {
-      return NextResponse.json(
-        { error: "Email, userId, and role are required", code: "MISSING_PARAMS" },
-        { status: 400 }
-      );
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Create admin role in D1
-    const db = getDatabase();
-    
-    await db`
-      INSERT INTO admins (user_id, id, role)
-      VALUES (${userId}, ${userId}, ${role})
-    `;
-
-    return NextResponse.json({
-      success: true,
-      message: "Admin role created successfully.",
-      role,
-    });
-  } catch (error) {
-    console.error("Create admin error:", error);
-    
-    return NextResponse.json(
-      { error: "Failed to create admin role", code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }

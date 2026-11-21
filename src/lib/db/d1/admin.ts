@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { getUserById, hasAdminRoleOfType, removeAdminRole as removeFromUsers } from "./d1/users";
+import { getDatabase } from "./client";
+import { getUserById, hasAdminRoleOfType, removeAdminRole as removeFromUsers } from "./users";
 
 export type AdminUser = {
   id: string;
@@ -52,7 +52,12 @@ export async function getAllAdmins(): Promise<AdminUser[]> {
       u.email
   `;
   
-  return rows.map(row => ({
+  return rows.map((row: {
+    id: string;
+    email: string;
+    display_name: string | null;
+    role: string;
+  }) => ({
     id: row.id,
     email: row.email,
     display_name: row.display_name ?? undefined,
@@ -64,6 +69,7 @@ export async function getAllAdmins(): Promise<AdminUser[]> {
  * Get admin user by ID (with role check)
  */
 export async function getAdminUserById(userId: string): Promise<AdminUser | null> {
+  const db = getDatabase();
   const user = await getUserById(userId);
   
   if (!user) return null;
@@ -75,7 +81,7 @@ export async function getAdminUserById(userId: string): Promise<AdminUser | null
   
   return {
     id: user.id,
-    email: user.email,
+    email: user.email ?? "",
     display_name: user.display_name ?? undefined,
     role: admin.role as "super_admin" | "admin" | "manager",
   };

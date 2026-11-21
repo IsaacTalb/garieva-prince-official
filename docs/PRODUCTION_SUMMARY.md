@@ -7,9 +7,9 @@
 
 ---
 
-## ✅ Current Status: PRODUCTION READY
+## Current Status: Phase 8 Complete; Deployment Verification Pending
 
-### Phases Completed: **1-7/18**
+### Phases Completed: **1-8/18**
 
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
@@ -20,8 +20,13 @@
 | 5 | Cloudflare R2 Media | ✅ Complete | Public/private storage separation implemented |
 | 6 | Commerce Features | ✅ Complete | Categories, cart, coupons fully functional |
 | 7 | Manual Payment + Claim Codes | ✅ Complete | Payment approval workflow, claim code generation |
+| 8 | Account / Wardrobe / Profile | ✅ Complete | Authenticated wardrobe, orders, profile, and visibility settings |
 
-**Next Phase**: Phase 8 — Account / Wardrobe / Profile (Optional before production launch)
+**Next Phase**: Phase 9 — NFC Digital Passport Foundation
+
+Cloudflare deployment still requires real D1 database IDs and production
+secrets. The Worker preview could not be verified in the current Windows
+environment because Application Control blocked a required native dependency.
 
 ---
 
@@ -80,7 +85,7 @@
 - Brevo for transactional email
 
 ### Local Development
-- SQLite with better-sqlite3 / sql.js
+- SQLite with sql.js
 - File-based database (dev.db)
 - No Cloudflare bindings required
 
@@ -106,8 +111,9 @@ AUTH_OTP_PEPPER=<16-char-random>
 BREVO_API_KEY=<your-brevo-api-key>
 BREVO_SENDER_EMAIL=noreply@garieva-prince.com
 
-# 3. Deploy:
-npx wrangler deploy garieva-prince --env production
+# 3. Test and deploy:
+npm run preview
+npm run deploy
 ```
 
 ### 2. Vercel (Easiest for Next.js) ⭐⭐

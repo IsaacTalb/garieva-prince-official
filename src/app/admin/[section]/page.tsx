@@ -11,7 +11,7 @@ export default async function AdminSectionPage({ params }: { params: Promise<{ s
   const { section } = await params;
   const title = Object.hasOwn(sections, section) ? sections[section] : null;
   if (!title) notFound();
-  if (!isAuthConfigured() || !isDatabaseConfigured()) return null;
+  if (!isCustomAuthConfigured() || !isDatabaseConfigured()) return null;
   try {
     await requireAdmin();
   } catch (error) {

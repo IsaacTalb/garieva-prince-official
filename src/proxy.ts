@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isCustomAuthConfigured } from "@/lib/auth/client";
 
 export async function proxy(request: NextRequest) {
   // Custom auth is configured (D1 + Brevo OTP) - no Auth0 middleware needed
-  if (!isCustomAuthConfigured()) {
+  if (!process.env.AUTH_SESSION_SECRET || !process.env.AUTH_OTP_PEPPER) {
     if (request.nextUrl.pathname === "/auth" || request.nextUrl.pathname.startsWith("/auth/")) {
       return NextResponse.json({ error: "Authentication is temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
     }

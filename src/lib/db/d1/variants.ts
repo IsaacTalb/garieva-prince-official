@@ -1,6 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { PublicProductSchema, type PublicProduct } from "@/schemas/catalog";
+import { getDatabase } from "./client";
 
 /**
  * Variant Repository - D1-backed product variants management
@@ -8,7 +7,7 @@ import { PublicProductSchema, type PublicProduct } from "@/schemas/catalog";
 
 type VariantData = {
   id?: string;
-  product_id: string;
+  productId: string;
   size?: string | null;
   color_name?: string | null;
   color_hex?: string | null;
@@ -108,7 +107,7 @@ export async function createVariant({
   try {
     const [result] = await db`
       INSERT INTO product_variants (id, product_id, size, color_name, color_hex, stock, price, created_at)
-      VALUES (${generateVariantId()}, ${productId}, ${size}, ${color_name}, ${color_hex}, ${stock}, ${price}, datetime('now'))
+      VALUES (${crypto.randomUUID()}, ${productId}, ${size}, ${color_name}, ${color_hex}, ${stock}, ${price}, datetime('now'))
       RETURNING *
     `;
     
@@ -264,7 +263,7 @@ export async function variantExists(variantId: string): Promise<boolean> {
 export async function getProductTotalVariantStock(productId: string): Promise<number> {
   const db = getDatabase();
   
-  const result = await db`SELECT COALESCE(SUM(stock), 0) as total FROM product_variants WHERE product_id = ${productId}`;
+  const [result] = await db`SELECT COALESCE(SUM(stock), 0) as total FROM product_variants WHERE product_id = ${productId}`;
   
   return typeof result.total === "number" ? Number(result.total) : 0;
 }

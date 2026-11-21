@@ -22,12 +22,14 @@ Before deploying to Cloudflare, ensure the following are configured:
 
 ### Deployment Steps
 
-1. Create D1 database in Cloudflare Dashboard
-2. Create R2 buckets (public/private)
-3. Configure Wrangler bindings in `wrangler.toml`
-4. Deploy to Cloudflare Workers (`npx wrangler deploy`)
-5. Set production environment variables
-6. Verify deployment at your domain
+1. Create a D1 database and put its ID in the matching `wrangler.toml` binding.
+2. Apply the SQL files in `cloudflare/migrations/` to that database.
+3. Configure the production secrets listed below with Wrangler.
+4. Run `npm run preview` to test the Worker build locally.
+5. Run `npm run deploy` to build and deploy the Next.js Worker.
+
+`npm run dev` uses the local SQLite database. Use `npm run preview` to test the
+Cloudflare Worker and its D1 binding.
 
 ---
 
@@ -122,8 +124,7 @@ ADMIN_USER_ID=your-super-admin-user-id-from-d1
 Alternatively, set environment variables directly in Cloudflare:
 
 ```bash
-npx wrangler secrets put --env production AUTH_SESSION_SECRET "your-secret"
-npx wrangler secrets put --env production DATABASE_URL "cloudflare:D1:your-db-id"
+npx wrangler secret put --env production AUTH_SESSION_SECRET "your-secret"
 # ... etc for all secrets
 ```
 
@@ -133,63 +134,18 @@ npx wrangler secrets put --env production DATABASE_URL "cloudflare:D1:your-db-id
 
 ## 4. Wrangler Configuration (`wrangler.toml`)
 
-### Production Deployment Config
+The checked-in configuration uses OpenNext's `.open-next/worker.js` output and
+a D1 binding named `DB`. Replace the placeholder `database_id` in both the
+default and production binding with the IDs created in your Cloudflare account.
+The production ID is required before `npm run deploy` can succeed.
 
-```toml
-name = "garieva-prince-production"
-main = "./src/app/api/entry.js"  # Or your main entry point
-compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
+Keep session, OTP, and email credentials out of `wrangler.toml`; set them as
+Worker secrets:
 
-# D1 Database Binding
-[vars]
-DATABASE_URL = "cloudflare:D1:your-database-id"
-CLOUDFLARE_D1_DATABASE_NAME = "garieva-prince"
-APP_BASE_URL = "https://your-domain.com"
-
-# Session Secrets (use wrangler secrets instead for better security)
-# [vars]
-# AUTH_SESSION_SECRET = "your-secret-from-env"
-# AUTH_OTP_PEPPER = "your-pepper-from-env"
-
-# R2 Bucket Bindings
-[[r2_buckets]]
-binding = "R2_PUBLIC"  # Or custom name used in your code
-bucket_name = "garieva-prince-media-public"
-
-[[r2_buckets]]
-binding = "R2_PRIVATE"
-bucket_name = "garieva-prince-media-private"
-
-# Environment-specific settings
-[env.production]
-vars = { DATABASE_URL = "cloudflare:D1:your-db-id", APP_BASE_URL = "https://your-domain.com" }
-
-[dev]
-local_vars = [
-  { name = "DATABASE_URL", value = "sqlite:./dev.db" },
-  { name = "BREVO_API_KEY", value = "your-dev-brevo-key" }
-]
-```
-
-### Development vs Production
-
-**Development** (`wrangler.toml`):
-```toml
-[dev]
-local_vars = [
-  { name = "DATABASE_URL", value = "sqlite:./dev.db" },
-  { name = "BREVO_API_KEY", value = "" }
-]
-```
-
-**Production**:
-```toml
-[env.production]
-vars = { 
-  DATABASE_URL = "cloudflare:D1:your-db-id",
-  APP_BASE_URL = "https://your-domain.com"
-}
+```powershell
+npx wrangler secret put AUTH_SESSION_SECRET --env production
+npx wrangler secret put AUTH_OTP_PEPPER --env production
+npx wrangler secret put BREVO_API_KEY --env production
 ```
 
 ---
@@ -267,26 +223,17 @@ npm run typecheck
 npm run lint
 ```
 
-### Deploy with Wrangler
-
-#### Option A: Full Static Export (Recommended)
+### Build and deploy the Next.js Worker
 
 ```bash
-# Export Next.js to static files
-npx wrangler pages functions-download ./out/static .
-
-# Deploy
-npx wrangler pages deploy garieva-prince-official --env production
+npm run typecheck
+npm run preview
+npm run deploy
 ```
 
-#### Option B: API Routes Only (For backend-only deployment)
-
-If deploying only API routes (not full Next.js):
-
-```bash
-# Deploy API endpoints
-npx wrangler deploy ./src/app/api/entry.js --name garieva-prince-api --env production
-```
+The deployment script builds with `@opennextjs/cloudflare` and deploys the
+production Wrangler environment. Do not deploy with `wrangler deploy` directly:
+the Worker entry point is generated under `.open-next/`.
 
 ### Custom Domain Setup
 

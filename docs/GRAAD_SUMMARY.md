@@ -227,10 +227,16 @@ NTAG 424 DNA (Pending Hardware)
 - Brevo confirmation email on payment approval
 - Delivery challan upload UI (Phase 14)
 
-### 📋 Phase 8 — Account / Wardrobe / Profile
-- Build account pages: WARDROBE, ORDERS, PROFILE
-- Wardrobe shows owned product_items with NFC serials
-- Profile editing with social visibility controls
+### ✅ Phase 8 — Account / Wardrobe / Profile (Complete)
+- Added authenticated account overview, wardrobe, order history, and profile pages
+- Wardrobe is scoped to current ownership and shows garment serials and NFC status
+- Added profile editing with public-profile and per-social-link visibility controls
+- Connected session cookies to Next.js request cookies and added sign-out
+
+Cloudflare deployment uses OpenNext Workers + D1. Replace the placeholder D1
+IDs and configure production secrets before deployment; Worker preview could not
+be verified in the current Windows environment because its native runtime was
+blocked by Application Control.
 
 ### 📋 Phase 9 — NFC Digital Passport Foundation
 - Implement `/piece/[id]` digital passport pages

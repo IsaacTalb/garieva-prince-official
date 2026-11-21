@@ -1,6 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import type { SessionData } from "@/lib/auth/session";
+import { getDatabase } from "./client";
 
 /**
  * Ownership Claim Codes Repository
@@ -24,6 +23,25 @@ export interface CreateClaimCodeInput {
   code_hash: string;
   status?: "active";
   expires_at?: string;
+}
+
+function queryRows<T extends object = Record<string, unknown>>(
+  query: string,
+  params: unknown[] = []
+): T[] {
+  const db = getDatabase();
+  const statement = db.prepare(query);
+
+  try {
+    statement.bind(params);
+    const rows: T[] = [];
+    while (statement.step()) {
+      rows.push(statement.getAsObject() as T);
+    }
+    return rows;
+  } finally {
+    statement.free();
+  }
 }
 
 /**
@@ -54,7 +72,7 @@ export async function generateClaimCode(
     product_item_id: productId,
     code_hash: codeHash,
     status: "active",
-    expires_at,
+    expires_at: expiresAt,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -77,12 +95,13 @@ export async function activateClaimCode(codeHash: string): Promise<void> {
  * Validate a claim code (check if active and not expired)
  */
 export async function validateClaimCode(codeHash: string): Promise<ClaimCode | null> {
-  const db = getDatabase();
-  
-  const rows = await db`
+  const rows = queryRows<ClaimCode>(
+    `
     SELECT * FROM ownership_claim_codes 
     WHERE code_hash = ? AND status = 'active'
-  `, [codeHash];
+    `,
+    [codeHash]
+  );
   
   return rows[0] || null;
 }
@@ -94,15 +113,18 @@ export async function redeemClaimCode(
   codeHash: string,
   userId: string,
   productItemId: string
-): Promise<SessionData | null> {
+): Promise<{ id: string; email: string; display_name: string } | null> {
   const db = getDatabase();
   
   // Check if code is valid and active
-  const [code] = await validateClaimCode(codeHash);
+  const code = await validateClaimCode(codeHash);
   if (!code) throw new Error("Invalid or expired claim code");
   
   // Check if product item belongs to this claim
-  const [item] = await db`SELECT id FROM product_items WHERE serial = ?`, [productItemId];
+  const [item] = queryRows<{ id: string }>(
+    "SELECT id FROM product_items WHERE serial = ?",
+    [productItemId]
+  );
   if (!item || item.id !== code.product_item_id) {
     throw new Error("Claim code does not match product item");
   }
@@ -141,14 +163,13 @@ export async function redeemClaimCode(
 export async function getActiveClaimCodes(
   productId: string
 ): Promise<ClaimCode[]> {
-  const db = getDatabase();
-  
-  const rows = await db`
+  return queryRows<ClaimCode>(
+    `
     SELECT * FROM ownership_claim_codes 
     WHERE product_item_id = ? AND status = 'active'
-  `, [productId];
-  
-  return rows;
+    `,
+    [productId]
+  );
 }
 
 /**
@@ -181,16 +202,20 @@ export async function reactivateClaimCode(codeId: string): Promise<void> {
  * Get claim code usage statistics (admin)
  */
 export async function getClaimCodeStats(): Promise<{ total: number; active: number; redeemed: number }> {
-  const db = getDatabase();
-  
-  const [total] = await db`SELECT COUNT(*) as total FROM ownership_claim_codes`;
-  const [active] = await db`SELECT COUNT(*) as count FROM ownership_claim_codes WHERE status = 'active'`;
-  const [redeemed] = await db`SELECT COUNT(*) as count FROM ownership_claim_codes WHERE status = 'redeemed'`;
+  const [total] = queryRows<{ total: number }>(
+    "SELECT COUNT(*) AS total FROM ownership_claim_codes"
+  );
+  const [active] = queryRows<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM ownership_claim_codes WHERE status = 'active'"
+  );
+  const [redeemed] = queryRows<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM ownership_claim_codes WHERE status = 'redeemed'"
+  );
   
   return {
-    total: (total as any).total ?? 0,
-    active: (active as any).count ?? 0,
-    redeemed: (redeemed as any).count ?? 0,
+    total: total?.total ?? 0,
+    active: active?.count ?? 0,
+    redeemed: redeemed?.count ?? 0,
   };
 }
 

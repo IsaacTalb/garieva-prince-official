@@ -1,5 +1,5 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
+import { getDatabase } from "./client";
 
 type CollectionData = {
   id?: string;
@@ -71,7 +71,7 @@ export async function createCollection({
   try {
     const [result] = await db`
       INSERT INTO collections (id, name, slug, description, status, created_at, updated_at)
-      VALUES (${generateCollectionId()}, ${name}, ${slug}, ${description}, ${status}, datetime('now'), datetime('now'))
+      VALUES (${crypto.randomUUID()}, ${name}, ${slug}, ${description}, ${status}, datetime('now'), datetime('now'))
       RETURNING *
     `;
     
@@ -186,7 +186,7 @@ export async function getCollectionProducts({
   const db = getDatabase();
   
   // First get the product count
-  const countResult = await db`
+  const [countResult] = await db`
     SELECT COUNT(*) as c FROM collection_products cp
     INNER JOIN products p ON cp.product_id = p.id
     WHERE cp.collection_id = ${collectionId} AND p.deleted_at IS NULL AND p.status = 'published'
@@ -256,7 +256,11 @@ export async function createCollectionProduct({
     return result;
   } catch (error) {
     // Handle duplicate constraint gracefully
-    return { id: generateCollectionProductId(collectionId, productId) };
+    throw new Error(
+      `Failed to create collection product relation: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 

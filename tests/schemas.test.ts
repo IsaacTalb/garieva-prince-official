@@ -22,7 +22,25 @@ test("identity mapping trusts verified emails only and never accepts profile rol
   assert.equal(verifiedIdentity({ sub: "auth0|customer", email: "person@example.com", email_verified: false }).email, null);
   assert.equal(verifiedIdentity({ sub: "auth0|customer", email: "PERSON@example.com", email_verified: true }).email, "person@example.com");
   assert.throws(() => verifiedIdentity({ email: "person@example.com" }));
-  assert.equal(profileSchema.safeParse({ display_name: "Person", username: null, phone: null, profile_visibility: "private", role: "admin" }).success, false);
+  const profile = {
+    display_name: "Person",
+    username: null,
+    phone: null,
+    bio: null,
+    instagram_url: null,
+    facebook_url: null,
+    tiktok_url: null,
+    telegram_url: null,
+    show_profile_publicly: false,
+    show_avatar_publicly: false,
+    show_instagram: false,
+    show_facebook: false,
+    show_tiktok: false,
+    show_telegram: false,
+  };
+  assert.equal(profileSchema.safeParse(profile).success, true);
+  assert.equal(profileSchema.safeParse({ ...profile, role: "admin" }).success, false);
+  assert.equal(profileSchema.safeParse({ ...profile, instagram_url: "javascript:alert(1)" }).success, false);
 });
 
 test("media validation rejects unbounded files, active content, and caller-specified keys", () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'node:test';
-import { strict: assert } from 'assert';
+import { describe, it } from 'node:test';
+import { strict as assert } from 'assert';
 
 /**
  * Database foundation verification tests

@@ -54,7 +54,7 @@ CREATE TABLE sessions (
 );
 CREATE INDEX idx_sessions_user ON sessions(user_id, expires_at);
 
--- Admins table - Role-based admin authorization
+-- Admins table - Role-based admin authorization (3 different roles: settings for admin users)
 CREATE TABLE admins (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL UNIQUE,

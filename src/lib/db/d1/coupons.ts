@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { requireAdminAccess } from "./d1/admin";
+import { getDatabase } from "./client";
+import { requireAdminAccess } from "./admin";
 
 export type Coupon = {
   id: string;
@@ -105,7 +105,7 @@ export async function getCouponByCode(code: string): Promise<Coupon | null> {
     min_purchase: rows[0].min_purchase ?? null,
     max_discount: rows[0].max_discount ?? null,
     is_active: rows[0].is_active === 1,
-    expires_at: rows[0.expires_at ?? null,
+    expires_at: rows[0].expires_at ?? null,
     usage_limit: rows[0].usage_limit ?? null,
     used_count: rows[0].used_count ?? 0,
     description: rows[0].description ?? undefined,
@@ -127,7 +127,7 @@ export async function createCoupon(input: CreateCouponInput): Promise<Coupon> {
   // Generate unique ID
   const id = `CPN-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   
-  await db`
+  const [result] = await db`
     INSERT INTO coupons (id, code, discount_type, discount_value, min_purchase, max_discount, 
                         is_active, expires_at, usage_limit, used_count, description, created_at)
     VALUES (${id}, ${input.code}, ${input.discountType}, ${input.discountValue}, 
@@ -138,8 +138,7 @@ export async function createCoupon(input: CreateCouponInput): Promise<Coupon> {
     RETURNING id, code, discount_type, discount_value, min_purchase, max_discount, 
               is_active, expires_at, usage_limit, used_count, description, created_at
   `;
-  
-  const result = await db`SELECT * FROM coupons WHERE id = ${id}`;
+  if (!result) throw new Error("Coupon insert did not return the created coupon");
   
   return {
     id: result.id,
@@ -188,11 +187,11 @@ export async function updateCoupon({
     UPDATE coupons 
     SET 
       code = COALESCE(${code}, code),
-      discount_type = ${discountType ?? discount_type},
+      discount_type = COALESCE(${discountType ?? null}, discount_type),
       discount_value = COALESCE(${discountValue}, discount_value),
-      min_purchase = ${minPurchase ?? min_purchase},
-      max_discount = ${maxDiscount ?? max_discount},
-      is_active = COALESCE(${isActive === undefined ? is_active : isActive}, is_active),
+      min_purchase = COALESCE(${minPurchase ?? null}, min_purchase),
+      max_discount = COALESCE(${maxDiscount ?? null}, max_discount),
+      is_active = COALESCE(${isActive === undefined ? null : Number(isActive)}, is_active),
       updated_at = datetime('now')
     WHERE id = ${couponId}
     RETURNING id, code, discount_type, discount_value, min_purchase, max_discount, 

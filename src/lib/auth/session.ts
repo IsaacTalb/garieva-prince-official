@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getDatabase } from "@/lib/db/d1/client";
-import { getUserById, hasAdminRoleOfType } from "@/lib/db/d1/users";
+import { getUserById, hasAdminRole } from "@/lib/db/d1/users";
 
 export class AccessError extends Error {
   constructor(public readonly status: 401 | 403) {
@@ -24,44 +25,24 @@ export class AccessError extends Error {
  * 5. On each request, validate cookie against D1
  */
 export const getCurrentUser = cache(async () => {
-  // Read session token from HttpOnly cookie (set by server)
-  const token = getCookie();
-  
+  const token = await getCookie();
   if (!token) return null;
-  
-  try {
-    const db = getDatabase();
-    
-    // Validate and refresh session
-    await validateSessionToken(token);
-    
-    // Find matching user
-    const rows = await db`SELECT id FROM sessions WHERE token_hash = ${token} AND revoked_at IS NULL LIMIT 1`;
-    
-    if (!rows[0]) return null;
-    
-    // Get user data
-    try {
-      const [user] = await db`SELECT id, email, display_name FROM users WHERE id = ${rows[0].id} LIMIT 1`;
-      
-      if (user) {
-        return {
-          id: user.id,
-          email: user.email,
-          display_name: user.display_name ?? undefined,
-          admin: false, // Admin role checked separately
-        };
-      }
-    } catch {
-      // User may have been deleted - invalidate session
-      await revokeSession(token);
-    }
-    
-    return null;
-  } catch {
-    // Invalid or expired session
+  if (!(await validateSessionToken(token))) return null;
+
+  const db = getDatabase();
+  const [session] = await db`
+    SELECT user_id FROM sessions
+    WHERE token_hash = ${token} AND revoked_at IS NULL
+    LIMIT 1
+  `;
+  if (!session) return null;
+
+  const user = await getUserById(String(session.user_id));
+  if (!user) {
+    await revokeSession(token);
     return null;
   }
+  return { ...user, admin: false };
 });
 
 /**
@@ -91,7 +72,7 @@ export async function requireAdmin() {
  */
 export async function requirePageUser() {
   const user = await getCurrentUser();
-  if (!user) redirect("/account");
+  if (!user) redirect("/account/sign-in");
   return user;
 }
 
@@ -106,44 +87,29 @@ type SessionData = {
  * Get current session (internal - for admin checks)
  */
 async function getCurrentSession(): Promise<SessionData | null> {
-  const token = getCookie();
-  
+  const token = await getCookie();
   if (!token) return null;
-  
-  try {
-    const db = getDatabase();
-    
-    // Validate and refresh session
-    await validateSessionToken(token);
-    
-    // Find matching user
-    const [session] = await db`SELECT id, email, display_name FROM sessions WHERE token_hash = ${token} LIMIT 1`;
-    
-    if (!session?.id) return null;
-    
-    try {
-      const [user] = await db`SELECT id, email, display_name FROM users WHERE id = ${session.id} LIMIT 1`;
-      
-      if (user) {
-        // Check for admin role
-        const [admin] = await db`SELECT 1 FROM admins WHERE user_id = ${session.id} LIMIT 1`;
-        
-        return {
-          id: session.id,
-          email: session.email,
-          display_name: session.display_name ?? undefined,
-          admin: !!admin,
-        };
-      }
-    } catch {
-      // User may have been deleted - invalidate session
-      await revokeSession(token);
-    }
-    
-    return null;
-  } catch {
+  if (!(await validateSessionToken(token))) return null;
+
+  const db = getDatabase();
+  const [session] = await db`
+    SELECT user_id FROM sessions
+    WHERE token_hash = ${token} AND revoked_at IS NULL
+    LIMIT 1
+  `;
+  if (!session) return null;
+
+  const user = await getUserById(String(session.user_id));
+  if (!user) {
+    await revokeSession(token);
     return null;
   }
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    display_name: user.display_name ?? undefined,
+    admin: await hasAdminRole(user.id),
+  };
 }
 
 /**
@@ -188,12 +154,9 @@ async function hashSessionToken(token: string): Promise<string> {
 /**
  * Get session token from cookie (client sets this via HttpOnly cookie)
  */
-function getCookie(): string | null {
-  // In a real Next.js server function, you'd use:
-  // request.cookies.get("auth_session_token")
-  // For now, return null - will be set by createSession
-  
-  return null;
+async function getCookie(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("auth_session_token")?.value ?? null;
 }
 
 /**
@@ -210,14 +173,10 @@ export async function createSession({
 }): Promise<void> {
   const db = getDatabase();
   
-  try {
-    await db`
-      INSERT INTO sessions (id, user_id, token_hash, expires_at)
-      VALUES (${generateSessionId()}, ${userId}, ${tokenHash}, ${expiresAt})
-    `;
-  } catch {
-    // Session may already exist - that's ok for now
-  }
+  await db`
+    INSERT INTO sessions (id, user_id, token_hash, expires_at)
+    VALUES (${crypto.randomUUID()}, ${userId}, ${tokenHash}, ${expiresAt})
+  `;
 }
 
 /**
@@ -245,12 +204,7 @@ export async function createAndSetSession({
  */
 export async function revokeSession(tokenHash: string): Promise<void> {
   const db = getDatabase();
-  
-  try {
-    await db`UPDATE sessions SET revoked_at = datetime('now') WHERE token_hash = ${tokenHash}`;
-  } catch {
-    // Session not found - that's ok
-  }
+  await db`UPDATE sessions SET revoked_at = datetime('now') WHERE token_hash = ${tokenHash}`;
 }
 
 /**
@@ -258,22 +212,14 @@ export async function revokeSession(tokenHash: string): Promise<void> {
  */
 export async function validateSessionToken(tokenHash: string): Promise<boolean> {
   const db = getDatabase();
-  
-  try {
-    // Refresh expiry if close to expiring
-    const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    
-    await db`
-      UPDATE sessions 
-      SET expires_at = datetime('now', ?)
-      WHERE token_hash = ${tokenHash} AND expires_at < datetime('now', ?)
-    `, `+1 hour`, `+1 hour`;
-    
-    return true;
-  } catch {
-    // Token not found or already invalid
-    return false;
-  }
+  const [session] = await db`
+    SELECT 1 FROM sessions
+    WHERE token_hash = ${tokenHash}
+      AND revoked_at IS NULL
+      AND julianday(expires_at) > julianday('now')
+    LIMIT 1
+  `;
+  return !!session;
 }
 
 /**
@@ -295,17 +241,22 @@ export async function createSessionFromOtp({
 export async function rotateSessionToken(oldTokenHash: string): Promise<string> {
   const token = generateSessionToken();
   const hash = await hashSessionToken(token);
-  
-  // Revoke old token
-  await revokeSession(oldTokenHash);
-  
-  // Create new session
+  const db = getDatabase();
+  const [session] = await db`
+    SELECT user_id FROM sessions
+    WHERE token_hash = ${oldTokenHash}
+      AND revoked_at IS NULL
+      AND julianday(expires_at) > julianday('now')
+    LIMIT 1
+  `;
+  if (!session) throw new AccessError(401);
+
   await createSession({
-    userId: /* need to pass user ID */ "", // TODO: get from D1
+    userId: String(session.user_id),
     tokenHash: hash,
     expiresAt: new Date(Date.now() + 2592000 * 1000).toISOString(),
   });
-  
+  await revokeSession(oldTokenHash);
   return hash;
 }
 
@@ -327,14 +278,21 @@ export async function getUserSessions(userId: string): Promise<Session[]> {
   const db = getDatabase();
   
   const rows = await db`
-    SELECT s.*, u.email as email, u.display_name 
+    SELECT s.*, u.email AS email, u.name AS display_name
     FROM sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.user_id = ${userId} AND s.revoked_at IS NULL
     ORDER BY created_at DESC
   `;
   
-  return rows.map((row) => ({
+  return rows.map((row: {
+    id: string;
+    token_hash: string;
+    expires_at: string;
+    user_id: string;
+    email: string;
+    display_name: string | null;
+  }) => ({
     id: row.id as string,
     token_hash: row.token_hash as string,
     expires_at: row.expires_at as string,

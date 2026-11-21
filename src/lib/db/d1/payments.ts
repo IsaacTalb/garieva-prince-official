@@ -1,6 +1,6 @@
 import "server-only";
-import { getDatabase } from "./d1/client";
-import { getUserById } from "./d1/users";
+import { getDatabase } from "./client";
+import { getUserById } from "./users";
 
 type Payment = {
   id: string;
@@ -164,7 +164,7 @@ export async function getCustomerFromPayment(paymentId: string): Promise<{
  */
 export async function getReviewerFromPayment(paymentId: string): Promise<{
   id: string;
-  email: string;
+  email: string | null;
   display_name: string | null;
   username: string | null;
 } | null> {
