@@ -32,7 +32,7 @@ DATABASE_URL = "cloudflare:D1:garieva-prince-dev"
 CLOUDFLARE_D1_DATABASE_NAME = "garieva-prince-dev"
 
 [env.production]
-name = "garieva-prince-prod"
+name = "garieva-prince-official"
 
 [[env.production.d1_databases]]
 binding = "DB"
@@ -51,7 +51,7 @@ binding = "ASSETS"
 
 [[env.production.services]]
 binding = "WORKER_SELF_REFERENCE"
-service = "garieva-prince-prod"
+service = "garieva-prince-official"
 
 [env.production.images]
 binding = "IMAGES"

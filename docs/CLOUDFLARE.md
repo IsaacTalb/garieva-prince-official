@@ -85,7 +85,7 @@ Navigate to your bucket settings to obtain:
 ## 3. Production Worker Variables and Secrets
 
 Vercel environment variables are not copied to Cloudflare. Configure the
-production Worker in **Workers & Pages → garieva-prince-prod → Settings →
+production Worker in **Workers & Pages → garieva-prince-official → Settings →
 Variables and Secrets**, or use Wrangler. The checked-in config has
 `keep_vars = true`, so dashboard variables are retained on later deployments.
 
@@ -146,7 +146,8 @@ contains the IDs for the dedicated development and production databases
 created for this project. If you recreate either database, update its matching
 `database_id`. Production assets, Images, and self-reference service bindings
 are declared separately because Wrangler environments do not inherit resource
-bindings.
+bindings. The production Worker name and its self-reference are both
+`garieva-prince-official`, matching the Worker connected to this repository.
 
 The `nodejs_compat_populate_process_env` compatibility flag is required because
 the application reads Worker variables and secrets through `process.env`.
