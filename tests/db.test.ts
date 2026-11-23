@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'assert';
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 /**
  * Database foundation verification tests
@@ -11,7 +13,7 @@ import { strict as assert } from 'assert';
 describe('D1 Database Foundation', () => {
   it('should have all required repository modules', async () => {
     // Verify D1 client module exists
-    assert.strictEqual(require.cache['./src/lib/db/d1/client.ts'] ? true : false, true);
+    assert.ok(fs.existsSync(path.resolve('./src/lib/db/d1/client.ts')));
     
     // All repository files should exist with proper exports
     const d1Modules = [
@@ -24,24 +26,20 @@ describe('D1 Database Foundation', () => {
       './src/lib/db/d1/restock_subscriptions',
     ];
     
-    for (const module of d1Modules) {
-      // In actual tests, these would be imported and validated
+    for (const modulePath of d1Modules) {
+      assert.ok(fs.existsSync(path.resolve(`${modulePath}.ts`)), `Should have ${modulePath}`);
     }
   });
   
   it('should have migration files in cloudflare/migrations/', async () => {
-    const fs = require('fs');
-    const path = require('path');
-    
     const migrationsPath = './cloudflare/migrations/';
     assert.strictEqual(fs.existsSync(migrationsPath), true);
     
     const coreMigration = path.join(migrationsPath, '0001_core.sql');
-    assert.ok(coreMigration); // File exists with non-empty content
+    assert.ok(fs.readFileSync(coreMigration, 'utf8').trim().length > 0);
   });
   
   it('should have Wrangler configuration', async () => {
-    const fs = require('fs');
     const wranglerConfigPath = './wrangler.toml';
     assert.ok(fs.existsSync(wranglerConfigPath));
     
@@ -50,7 +48,6 @@ describe('D1 Database Foundation', () => {
   });
   
   it('should have Cloudflare documentation', async () => {
-    const fs = require('fs');
     const cloudflareDocPath = './docs/CLOUDFLARE.md';
     assert.ok(fs.existsSync(cloudflareDocPath));
     
@@ -60,46 +57,37 @@ describe('D1 Database Foundation', () => {
   });
   
   it('should have health check endpoint', async () => {
-    const fs = require('fs');
-    const healthPath = './src/app/health/route.ts';
-    
-    if (fs.existsSync(healthPath)) {
-      const content = fs.readFileSync(healthPath, 'utf8');
-      assert.ok(content.includes('Health check'));
-    } else {
-      // Fallback: verify via route existence in app folder
-      assert.ok(true);
-    }
+    const healthPath = './src/app/api/health/route.ts';
+    const content = fs.readFileSync(healthPath, 'utf8');
+    assert.ok(content.includes('Health check'));
   });
 });
 
 describe('D1 Schema Completeness', () => {
   it('should have users table definition', async () => {
-    const content = `-- D1 Migration 0001 - Core application schema for Garieva Prince
--- D1 uses SQLite. Foreign keys, COLLATE, and CURRENT_TIMESTAMP are supported.`;
+    const content = fs.readFileSync('./cloudflare/migrations/0001_core.sql', 'utf8');
     
-    assert.ok(content.includes('CREATE TABLE IF NOT EXISTS users'), 'Schema should define users table');
+    assert.ok(content.includes('CREATE TABLE users'), 'Schema should define users table');
     assert.ok(content.includes('CREATE INDEX idx_users_email ON users(email)'), 'Schema should index email');
   });
   
   it('should have ownership tables', async () => {
-    const content = `-- D1 Migration 0001 - Core application schema for Garieva Prince`;
+    const content = fs.readFileSync('./cloudflare/migrations/0001_core.sql', 'utf8');
     
-    assert.ok(content.includes('CREATE TABLE IF NOT EXISTS ownerships'), 'Schema should define ownerships table');
+    assert.ok(content.includes('CREATE TABLE ownerships'), 'Schema should define ownerships table');
     assert.ok(content.includes('ownership_claim_codes'), 'Schema should have claim codes table');
   });
   
   it('should have NFC tag table', async () => {
-    const content = `-- D1 Migration 0001 - Core application schema for Garieva Prince`;
+    const content = fs.readFileSync('./cloudflare/migrations/0001_core.sql', 'utf8');
     
-    assert.ok(content.includes('CREATE TABLE IF NOT EXISTS nfc_tags'), 'Schema should define nfc_tags table');
+    assert.ok(content.includes('CREATE TABLE nfc_tags'), 'Schema should define nfc_tags table');
     assert.ok(content.includes('NTAG424DNA'), 'Schema should reference NTAG424DNA tag type');
   });
 });
 
 describe('D1 Repository Function Signatures', () => {
   it('should have user repository methods', async () => {
-    const fs = require('fs');
     const usersPath = './src/lib/db/d1/users.ts';
     
     if (fs.existsSync(usersPath)) {
@@ -113,7 +101,6 @@ describe('D1 Repository Function Signatures', () => {
   });
   
   it('should have product repository methods', async () => {
-    const fs = require('fs');
     const productsPath = './src/lib/db/d1/products.ts';
     
     if (fs.existsSync(productsPath)) {
@@ -126,7 +113,6 @@ describe('D1 Repository Function Signatures', () => {
   });
   
   it('should have order repository methods', async () => {
-    const fs = require('fs');
     const ordersPath = './src/lib/db/d1/orders.ts';
     
     if (fs.existsSync(ordersPath)) {
@@ -139,7 +125,6 @@ describe('D1 Repository Function Signatures', () => {
   });
   
   it('should have ownership repository methods', async () => {
-    const fs = require('fs');
     const ownershipPath = './src/lib/db/d1/ownership.ts';
     
     if (fs.existsSync(ownershipPath)) {
@@ -147,14 +132,13 @@ describe('D1 Repository Function Signatures', () => {
       
       assert.ok(content.includes('getCurrentOwnership'), 'Ownership module should have getCurrentOwnership');
       assert.ok(content.includes('getOwnershipHistory'), 'Ownership module should have getOwnershipHistory');
-      assert.ok(content.includes('verifyNfcTagForItem'), 'Ownership module should have NFC verification');
+      assert.ok(content.includes('verifyNfcTag'), 'Ownership module should have NFC verification');
     }
   });
 });
 
 describe('D1 Type Safety', () => {
   it('should use server-only import in D1 modules', async () => {
-    const fs = require('fs');
     const d1ClientPath = './src/lib/db/d1/client.ts';
     
     if (fs.existsSync(d1ClientPath)) {
@@ -165,7 +149,6 @@ describe('D1 Type Safety', () => {
   });
   
   it('should define typed repository functions', async () => {
-    const fs = require('fs');
     const productsPath = './src/lib/db/d1/products.ts';
     
     if (fs.existsSync(productsPath)) {
@@ -179,20 +162,22 @@ describe('D1 Type Safety', () => {
 
 describe('D1 Session Security', () => {
   it('should store only token hashes in session.ts', async () => {
-    const fs = require('fs');
     const sessionPath = './src/lib/auth/session.ts';
     
     if (fs.existsSync(sessionPath)) {
       const content = fs.readFileSync(sessionPath, 'utf8');
       
-      assert.ok(content.includes('token_hash'), 'Should reference token hashes');
-      assert.ok(!content.includes('password'), 'Should not store passwords');
-      assert.ok(!content.includes('plaintext'), 'Should not use plaintext tokens');
+      const sessionTable = fs
+        .readFileSync('./cloudflare/migrations/0001_core.sql', 'utf8')
+        .match(/CREATE TABLE sessions \(([\s\S]*?)\n\);/)?.[1];
+      assert.ok(content.includes('token_hash'), 'Session code should use token hashes');
+      assert.ok(sessionTable, 'Should define a session table');
+      assert.match(sessionTable, /token_hash TEXT/);
+      assert.doesNotMatch(sessionTable, /password/i);
     }
   });
   
   it('should validate sessions before access', async () => {
-    const fs = require('fs');
     const sessionPath = './src/lib/auth/session.ts';
     
     if (fs.existsSync(sessionPath)) {
@@ -206,9 +191,6 @@ describe('D1 Session Security', () => {
 
 describe('D1 Module Structure', () => {
   it('should organize D1 code under src/lib/db/d1/', async () => {
-    const fs = require('fs');
-    const path = require('path');
-    
     const d1Dir = './src/lib/db/d1/';
     assert.ok(fs.existsSync(d1Dir));
     
@@ -229,20 +211,13 @@ describe('D1 Module Structure', () => {
     }
   });
   
-  it('should separate D1 client from legacy PostgreSQL runtime', async () => {
-    const fs = require('fs');
-    
-    // Legacy client should still exist for transitional compatibility
-    assert.ok(fs.existsSync('./src/lib/db/client.ts'), 'Legacy client exists (transitional)');
-    
-    // New D1 abstraction should also exist
-    assert.ok(fs.existsSync('./src/lib/db/d1/client.ts'), 'D1 client exists (new foundation)');
+  it('should use the D1 client as the database runtime', async () => {
+    assert.ok(fs.existsSync('./src/lib/db/d1/client.ts'), 'D1 client exists');
   });
 });
 
 describe('D1 Migration Compatibility', () => {
   it('should use SQLite-compatible syntax', async () => {
-    const fs = require('fs');
     const migrationPath = './cloudflare/migrations/0001_core.sql';
     
     if (fs.existsSync(migrationPath)) {
@@ -252,13 +227,11 @@ describe('D1 Migration Compatibility', () => {
       assert.ok(content.includes('datetime('), 'Should use SQLite datetime function');
       assert.ok(!content.includes('NOW()'), 'Should not use PostgreSQL NOW()');
       
-      // Some PostgreSQL-specific syntax that D1 supports
-      assert.ok(content.includes('PRAGMA'), 'D1 supports PRAGMA statements');
+      assert.ok(!content.includes('BEGIN TRANSACTION'), 'D1 migration should not start explicit transactions');
     }
   });
   
   it('should have proper indexes for performance', async () => {
-    const fs = require('fs');
     const migrationPath = './cloudflare/migrations/0001_core.sql';
     
     if (fs.existsSync(migrationPath)) {
@@ -273,7 +246,6 @@ describe('D1 Migration Compatibility', () => {
 
 describe('D1 Error Handling', () => {
   it('should handle database configuration errors gracefully', async () => {
-    const fs = require('fs');
     const clientPath = './src/lib/db/d1/client.ts';
     
     if (fs.existsSync(clientPath)) {
@@ -285,15 +257,10 @@ describe('D1 Error Handling', () => {
   });
   
   it('should throw meaningful errors on invalid data', async () => {
-    const fs = require('fs');
-    const usersPath = './src/lib/db/d1/users.ts';
-    
-    if (fs.existsSync(usersPath)) {
-      const content = fs.readFileSync(usersPath, 'utf8');
-      
-      assert.ok(content.includes('Invalid user data'), 'Should throw on invalid user data');
-      assert.ok(content.includes('configurationError'), 'Should handle configuration errors');
-    }
+    const usersContent = fs.readFileSync('./src/lib/db/d1/users.ts', 'utf8');
+    const clientContent = fs.readFileSync('./src/lib/db/d1/client.ts', 'utf8');
+    assert.ok(usersContent.includes('Invalid user data'), 'Should throw on invalid user data');
+    assert.ok(clientContent.includes('Unsupported DATABASE_URL scheme'), 'Should reject unsupported database URLs');
   });
 });
 

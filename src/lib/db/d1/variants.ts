@@ -188,7 +188,7 @@ export async function getVariants({
   const [countResult] = await db`${query}`;
   const total = typeof countResult.total === "number" ? countResult.total : 0;
   
-  let rows: any[] = [];
+  let rows: Record<string, unknown>[] = [];
   
   if (limit || offset) {
     const limitVal = productId ? limit : undefined;
@@ -224,7 +224,7 @@ type Variant = {
   created_at: string;
 };
 
-function parseVariant(row: any): Variant {
+function parseVariant(row: Record<string, unknown>): Variant {
   return {
     id: row.id as string,
     product_id: row.product_id as string,

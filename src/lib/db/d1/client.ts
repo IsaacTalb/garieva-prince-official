@@ -1,5 +1,6 @@
 import "server-only";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
@@ -12,11 +13,42 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
  */
 
 let databaseName: string | undefined;
-let sqlBound: any;
+type SQLiteValue = string | number | null | Uint8Array;
+type SQLiteStatement = {
+  bind(values: SQLiteValue[]): void;
+  step(): boolean;
+  getAsObject(): Record<string, SQLiteValue>;
+  get(): SQLiteValue[];
+  reset(): void;
+  free(): void;
+};
+type SQLiteDatabase = {
+  export(): Uint8Array;
+  prepare(query: string): SQLiteStatement;
+  exec(query: string): SQLiteExecResult[];
+  getRowsModified(): number;
+};
+type SQLiteExecResult = {
+  columns: string[];
+  values: SQLiteValue[][];
+};
+type SqlJsInitializer = () => Promise<{
+  Database: new (data?: Uint8Array) => SQLiteDatabase;
+}>;
+type SqlJsModule = SqlJsInitializer | { default?: SqlJsInitializer };
+
+let sqlBound: SQLiteDatabase | undefined;
 let transactionOpen = false;
 
-const sqlModule = require("sql.js/dist/sql-wasm-inline.js");
-const SQL = await (sqlModule.default ?? sqlModule)();
+const sqlModule = createRequire(import.meta.url)(
+  "sql.js/dist/sql-wasm-inline.js",
+) as SqlJsModule;
+const initializeSqlJs =
+  typeof sqlModule === "function" ? sqlModule : sqlModule.default;
+if (!initializeSqlJs) {
+  throw new TypeError("The SQL.js inline-WASM initializer is unavailable.");
+}
+const SQL = await initializeSqlJs();
 
 // SQL.js returns dynamically shaped rows; callers validate them at boundaries.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,9 +69,35 @@ declare global {
   }
 }
 
+function quoteIdentifier(identifier: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new TypeError(`Invalid SQL identifier: ${identifier}`);
+  }
+  return `"${identifier}"`;
+}
+
+function getLocalDatabase(): SQLiteDatabase {
+  if (!sqlBound) {
+    throw new Error("The local SQLite database has not been initialized.");
+  }
+  return sqlBound;
+}
+
+function toSQLiteValue(value: unknown): SQLiteValue {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string" || typeof value === "number") return value;
+  if (typeof value === "boolean") return value ? 1 : 0;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  }
+  throw new TypeError(`Unsupported SQLite query parameter: ${typeof value}`);
+}
+
 function persistDatabase(): void {
   const dbUrl = process.env.DATABASE_URL;
-  if (!sqlBound || !dbUrl?.startsWith("sqlite:") || transactionOpen) return;
+  const localDatabase = sqlBound;
+  if (!localDatabase || !dbUrl?.startsWith("sqlite:") || transactionOpen) return;
 
   const dbPath = dbUrl.slice("sqlite:".length);
   if (!dbPath || dbPath === ":memory:") return;
@@ -49,25 +107,25 @@ function persistDatabase(): void {
     dbPath
   );
   fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
-  fs.writeFileSync(resolvedPath, Buffer.from(sqlBound.export()));
+  fs.writeFileSync(resolvedPath, Buffer.from(localDatabase.export()));
 }
 
 function createStatement(query: string) {
-  const statement = sqlBound.prepare(query);
+  const statement = getLocalDatabase().prepare(query);
 
   return {
     bind(params: unknown[] | number, value?: unknown) {
       if (Array.isArray(params)) {
-        statement.bind(params);
+        statement.bind(params.map(toSQLiteValue));
       } else {
-        statement.bind([params, value]);
+        statement.bind([toSQLiteValue(params), toSQLiteValue(value)]);
       }
     },
     step: () => statement.step(),
     getAsObject: () => statement.getAsObject() as QueryRow,
     getAsArray: () => statement.get(),
     run(params?: unknown[]) {
-      if (params) statement.bind(params);
+      if (params) statement.bind(params.map(toSQLiteValue));
       statement.step();
       statement.reset();
       persistDatabase();
@@ -94,9 +152,9 @@ function createDatabaseClient(): DatabaseClient {
       (query, part, index) => query + (index ? "?" : "") + part,
       ""
     );
-    const statement = sqlBound.prepare(queryText);
+    const statement = getLocalDatabase().prepare(queryText);
     try {
-      statement.bind(values);
+      statement.bind(values.map(toSQLiteValue));
       const rows: QueryRow[] = [];
       while (statement.step()) {
         rows.push(statement.getAsObject() as QueryRow);
@@ -112,7 +170,8 @@ function createDatabaseClient(): DatabaseClient {
 
   client.prepare = createStatement;
   client.exec = (query: string) => {
-    const results = sqlBound.exec(query);
+    const localDatabase = getLocalDatabase();
+    const results = localDatabase.exec(query);
     if (/^\s*BEGIN\b/i.test(query)) transactionOpen = true;
     if (/^\s*(COMMIT|END)\b/i.test(query)) {
       transactionOpen = false;
@@ -124,7 +183,7 @@ function createDatabaseClient(): DatabaseClient {
     }
     return results;
   };
-  client.getRowsModified = () => sqlBound.getRowsModified();
+  client.getRowsModified = () => getLocalDatabase().getRowsModified();
   return client;
 }
 
@@ -268,7 +327,7 @@ export function getDatabaseName(): string {
 /**
  * Compatibility layer: Execute raw SQL with template literal support for local development
  */
-export function db(query: string, params?: any[]) {
+export function db(query: string, params?: unknown[]) {
   const db = getDatabase();
   
   try {
@@ -427,7 +486,7 @@ export function initSampleSchema() {
 /**
  * Execute INSERT and return last inserted ID
  */
-export function insertAndGetId(table: string, data: Record<string, any>): number {
+export function insertAndGetId(table: string, data: Record<string, unknown>): number {
   const db = getDatabase();
   
   if (!db || typeof db.exec !== "function") {
@@ -436,14 +495,18 @@ export function insertAndGetId(table: string, data: Record<string, any>): number
   }
   
   try {
-    let columns = Object.keys(data).join(', ');
-    let values = Object.values(data).map(v => 
-      typeof v === 'string' ? `'${v}'` : 
-      Array.isArray(v) ? `(${v.map(x => `'${x}'`).join(',')})` : 
-      v
-    ).join(', ');
-    
-    db.exec(`INSERT INTO ${table} (${columns}) VALUES (${values})`);
+    const columns = Object.keys(data);
+    if (columns.length === 0) {
+      throw new TypeError("Insert data must include at least one column.");
+    }
+    const quotedTable = quoteIdentifier(table);
+    const quotedColumns = columns.map(quoteIdentifier).join(", ");
+    const placeholders = columns.map(() => "?").join(", ");
+    const statement = db.prepare(
+      `INSERT INTO ${quotedTable} (${quotedColumns}) VALUES (${placeholders})`,
+    );
+    statement.run(columns.map((column) => data[column]));
+    statement.free();
     return 1; // Simplified - in real implementation would need to track ID
   } catch (err) {
     console.error("Insert failed:", err);
@@ -454,7 +517,7 @@ export function insertAndGetId(table: string, data: Record<string, any>): number
 /**
  * Execute UPDATE and return affected rows count
  */
-export function updateAndReturnCount(query: string, params?: any[]): number {
+export function updateAndReturnCount(query: string, params?: unknown[]): number {
   const db = getDatabase();
   
   if (!db || typeof db.exec !== "function") {
@@ -467,20 +530,7 @@ export function updateAndReturnCount(query: string, params?: any[]): number {
       // Execute with parameters
       const stmt = db.prepare(query.replace(/\?/g, () => "?"));
       
-      for (const param of params) {
-        let type: string;
-        if (typeof param === "string") {
-          type = "'";
-        } else if (typeof param === "number") {
-          type = "";
-        } else {
-          type = "";
-        }
-        
-        stmt.bind(1, param);
-      }
-      
-      stmt.run();
+      stmt.run(params);
       stmt.free();
       return 1; // Simplified - would need to track affected rows
     } else {
@@ -496,7 +546,7 @@ export function updateAndReturnCount(query: string, params?: any[]): number {
 /**
  * Execute DELETE and return affected rows count  
  */
-export function deleteAndReturnCount(query: string, params?: any[]): number {
+export function deleteAndReturnCount(query: string, params?: unknown[]): number {
   const db = getDatabase();
   
   if (!db || typeof db.exec !== "function") {
@@ -508,18 +558,7 @@ export function deleteAndReturnCount(query: string, params?: any[]): number {
     if (params && params.length > 0) {
       const stmt = db.prepare(query.replace(/\?/g, () => "?"));
       
-      for (const param of params) {
-        let type: string;
-        if (typeof param === "string") {
-          type = "'";
-        } else {
-          type = "";
-        }
-        
-        stmt.bind(1, param);
-      }
-      
-      stmt.run();
+      stmt.run(params);
       stmt.free();
       return 1; // Simplified
     } else {

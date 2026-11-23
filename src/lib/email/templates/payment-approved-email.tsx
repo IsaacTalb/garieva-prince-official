@@ -28,7 +28,7 @@ export function PaymentApprovedEmailTemplate({
         </div>
         
         <p style={{ color: "#666", marginTop: 20 }}>
-          Your order is now being processed. You will receive your Ownership Code via email once it's ready.
+          Your order is now being processed. You will receive your Ownership Code via email once it&apos;s ready.
         </p>
         
         <div style={{ background: "#f5f5f5", padding: 15, borderRadius: 8, margin: "20px 0" }}>

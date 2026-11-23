@@ -103,7 +103,7 @@ export async function logUserUpdated({
   changes,
 }: {
   userId: string;
-  changes: Record<string, any>;
+  changes: Record<string, unknown>;
 }): Promise<void> {
   await createAuditLog({
     actorUserId: "system",
@@ -153,7 +153,7 @@ export async function logProductUpdated({
   changes,
 }: {
   productId: string;
-  changes: Record<string, any>;
+  changes: Record<string, unknown>;
 }): Promise<void> {
   await createAuditLog({
     actorUserId: "system",

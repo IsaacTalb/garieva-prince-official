@@ -168,7 +168,7 @@ export async function getDrops(options?: {
   const [countResult] = await db`${query}`;
   const total = typeof countResult.total === "number" ? Number(countResult.total) : 0;
   
-  let rows: any[] = [];
+  let rows: Record<string, unknown>[] = [];
   
   if (options?.limit || options?.offset) {
     query = `
@@ -385,7 +385,7 @@ export async function closeDrop(dropId: string): Promise<Drop | null> {
   return await updateDrop({ dropId, status: "closed" });
 }
 
-function parseDrop(row: any): Drop {
+function parseDrop(row: Record<string, unknown>): Drop {
   return {
     id: row.id as string,
     collection_id: row.collection_id as string | null,
@@ -393,8 +393,8 @@ function parseDrop(row: any): Drop {
     slug: row.slug as string,
     description: row.description as string | null,
     status: row.status as "draft" | "scheduled" | "active" | "closed",
-    opens_at: row.opens_at ? new Date(row.opens_at).toISOString() : null,
-    closes_at: row.closes_at ? new Date(row.closes_at).toISOString() : null,
+    opens_at: row.opens_at ? new Date(String(row.opens_at)).toISOString() : null,
+    closes_at: row.closes_at ? new Date(String(row.closes_at)).toISOString() : null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
   };

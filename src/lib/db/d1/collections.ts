@@ -145,7 +145,7 @@ export async function getCollections(options?: {
   const [countResult] = await db`${query}`;
   const total = typeof countResult.total === "number" ? Number(countResult.total) : 0;
   
-  let rows: any[] = [];
+  let rows: Record<string, unknown>[] = [];
   
   if (options?.limit || options?.offset) {
     query = `
@@ -300,7 +300,7 @@ export async function updateCollectionProductsPositions({
   }
 }
 
-function parseCollection(row: any): Collection {
+function parseCollection(row: Record<string, unknown>): Collection {
   return {
     id: row.id as string,
     name: row.name as string,

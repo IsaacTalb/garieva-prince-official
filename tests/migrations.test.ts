@@ -1,39 +1,89 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
 import { test } from "node:test";
-import { PGlite } from "@electric-sql/pglite";
 
-test("migrations preserve application identity, variant integrity, and deny browser access", async () => {
-  const db = new PGlite();
+type SQLiteValue = string | number | null | Uint8Array;
+type SQLiteDatabase = {
+  exec(query: string): Array<{ columns: string[]; values: SQLiteValue[][] }>;
+  run(query: string, params?: SQLiteValue[]): void;
+  close(): void;
+};
+type SqlJsInitializer = () => Promise<{
+  Database: new () => SQLiteDatabase;
+}>;
+type SqlJsModule = SqlJsInitializer | { default?: SqlJsInitializer };
+
+const sqlModule = createRequire(import.meta.url)(
+  "sql.js/dist/sql-wasm-inline.js",
+) as SqlJsModule;
+const initializeSqlJs =
+  typeof sqlModule === "function" ? sqlModule : sqlModule.default;
+if (!initializeSqlJs) {
+  throw new TypeError("The SQL.js inline-WASM initializer is unavailable.");
+}
+
+test("D1 migrations apply and enforce core data constraints", async () => {
+  const SQL = await initializeSqlJs();
+  const db = new SQL.Database();
+
   try {
-    // Supabase-provided roles simulated in an isolated PostgreSQL engine.
-    await db.exec("create role anon; create role authenticated; create role service_role;");
-    const directory = new URL("../supabase/migrations/", import.meta.url);
-    for (const name of (await readdir(directory)).filter((name) => name.endsWith(".sql")).sort()) {
-      await db.exec(await readFile(new URL(name, directory), "utf8"));
+    const migrationsDirectory = path.resolve("cloudflare", "migrations");
+    const migrationFiles = (await readdir(migrationsDirectory))
+      .filter((name) => /^\d+.*\.sql$/.test(name))
+      .sort();
+
+    assert.equal(migrationFiles.length, 7);
+    for (const migration of migrationFiles) {
+      db.exec(await readFile(path.join(migrationsDirectory, migration), "utf8"));
     }
-    const { rows: users } = await db.query<{ id: string; profile_visibility: string }>("insert into public.users(auth0_sub, email) values ('auth0|test', 'person@example.com') returning id, profile_visibility");
-    assert.match(users[0].id, /^[0-9a-f-]{36}$/);
-    assert.equal(users[0].profile_visibility, "private");
-    await assert.rejects(db.query("insert into public.users(auth0_sub) values ('auth0|test')"));
-    await assert.rejects(db.query("insert into public.users(auth0_sub,email) values ('auth0|other','PERSON@example.com')"));
-    await assert.rejects(db.query("insert into public.user_roles(user_id,role) values (gen_random_uuid(),'admin')"));
-    const { rows: products } = await db.query<{ id: string }>("insert into public.products(name,slug,currency,created_by) values ('Test piece','test-piece','USD',$1) returning id", [users[0].id]);
-    await db.query("insert into public.product_variants(product_id,sku,size,color,price_minor,stock_on_hand) values ($1,'GP-TEST','S','Ink',100,2)", [products[0].id]);
-    await assert.rejects(db.query("update public.product_variants set stock_reserved = 3"));
-    await assert.rejects(db.query("update public.product_variants set stock_on_hand = -1"));
-    await assert.rejects(db.query("insert into public.product_variants(product_id,sku,size,color,price_minor) values ($1,'OTHER','s','ink',100)", [products[0].id]));
-    await assert.rejects(db.query("insert into public.drops(name,slug,status) values ('Test','test','active')"));
-    await db.exec("set role anon");
-    await assert.rejects(db.query("select * from public.users"));
-    await assert.rejects(db.query("select * from public.products"));
-    await db.exec("reset role; set role authenticated");
-    await assert.rejects(db.query("insert into public.user_roles(user_id,role) values ($1,'admin')", [users[0].id]));
-    await db.exec("reset role");
-    const { rows: tables } = await db.query<{ relrowsecurity: boolean }>("select relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r'");
-    assert.equal(tables.length, 8);
-    assert.equal(tables.every((table) => table.relrowsecurity), true);
+
+    const userColumns = db.exec("PRAGMA table_info(users)")[0].values
+      .map((column) => column[1]);
+    assert.ok(userColumns.includes("show_wardrobe_publicly"));
+
+    db.run("INSERT INTO users (id, email) VALUES (?, ?)", ["user-1", "owner@example.test"]);
+    assert.throws(() =>
+      db.run("INSERT INTO users (id, email) VALUES (?, ?)", ["user-2", "owner@example.test"]),
+    );
+    assert.throws(() =>
+      db.run(
+        "INSERT INTO users (id, email, show_wardrobe_publicly) VALUES (?, ?, ?)",
+        ["user-3", "invalid@example.test", 2],
+      ),
+    );
+
+    db.run(
+      "INSERT INTO products (id, name, slug, price, stock) VALUES (?, ?, ?, ?, ?)",
+      ["product-1", "Test piece", "test-piece", 100, 2],
+    );
+    db.run(
+      "INSERT INTO product_items (id, product_id, public_id, serial_number) VALUES (?, ?, ?, ?)",
+      ["item-1", "product-1", "GP-TEST-1", "GP-TEST-1"],
+    );
+    db.run(
+      "INSERT INTO ownerships (id, product_item_id, user_id, acquisition_type) VALUES (?, ?, ?, ?)",
+      ["ownership-1", "item-1", "user-1", "original_purchase"],
+    );
+    assert.throws(() =>
+      db.run(
+        "INSERT INTO ownerships (id, product_item_id, user_id, acquisition_type) VALUES (?, ?, ?, ?)",
+        ["ownership-2", "item-1", "user-1", "original_purchase"],
+      ),
+    );
+
+    db.run(
+      "INSERT INTO nfc_verification_events (id, product_item_id, key_version, tap_counter) VALUES (?, ?, ?, ?)",
+      ["event-1", "item-1", 1, 5],
+    );
+    assert.throws(() =>
+      db.run(
+        "INSERT INTO nfc_verification_events (id, product_item_id, key_version, tap_counter) VALUES (?, ?, ?, ?)",
+        ["event-2", "item-1", 1, 5],
+      ),
+    );
   } finally {
-    await db.close();
+    db.close();
   }
 });
