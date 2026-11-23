@@ -131,7 +131,9 @@ Set these as non-secret Worker variables:
 
 `DATABASE_URL` and `CLOUDFLARE_D1_DATABASE_NAME` are already declared in
 `wrangler.toml`; D1 access is through the `DB` binding, not a database URL
-secret. This application expects **separate public and private R2 buckets**.
+secret. The local `sql.js` adapter is initialized only for `sqlite:` URLs;
+Workers using `cloudflare:D1:` skip its WASM initialization. This application
+expects **separate public and private R2 buckets**.
 The Vercel variable `R2_BUCKET_NAME` is not used by the app; assign the
 existing bucket to one role and create a second bucket for the other. Do not
 enable public access on the private bucket.

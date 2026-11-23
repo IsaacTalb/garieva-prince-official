@@ -36,19 +36,23 @@ type SqlJsInitializer = () => Promise<{
   Database: new (data?: Uint8Array) => SQLiteDatabase;
 }>;
 type SqlJsModule = SqlJsInitializer | { default?: SqlJsInitializer };
+type SqlJsDatabaseModule = Awaited<ReturnType<SqlJsInitializer>>;
 
 let sqlBound: SQLiteDatabase | undefined;
 let transactionOpen = false;
 
-const sqlModule = createRequire(import.meta.url)(
-  "sql.js/dist/sql-wasm-inline.js",
-) as SqlJsModule;
-const initializeSqlJs =
-  typeof sqlModule === "function" ? sqlModule : sqlModule.default;
-if (!initializeSqlJs) {
-  throw new TypeError("The SQL.js inline-WASM initializer is unavailable.");
+let SQL: SqlJsDatabaseModule | undefined;
+if (!process.env.DATABASE_URL?.trim().startsWith("cloudflare:")) {
+  const sqlModule = createRequire(import.meta.url)(
+    "sql.js/dist/sql-wasm-inline.js",
+  ) as SqlJsModule;
+  const initializeSqlJs =
+    typeof sqlModule === "function" ? sqlModule : sqlModule.default;
+  if (!initializeSqlJs) {
+    throw new TypeError("The SQL.js inline-WASM initializer is unavailable.");
+  }
+  SQL = await initializeSqlJs();
 }
-const SQL = await initializeSqlJs();
 
 // SQL.js returns dynamically shaped rows; callers validate them at boundaries.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,6 +254,10 @@ export function getDatabase() {
   }
 
   if (!sqlBound) {
+    if (!SQL) {
+      throw new Error("SQL.js is unavailable for the configured database runtime.");
+    }
+
     const dbPath = dbUrl?.slice("sqlite:".length);
     if (dbPath && dbPath !== ":memory:") {
       const resolvedPath = path.resolve(
