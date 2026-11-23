@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Custom auth is configured (D1 + Brevo OTP) - no Auth0 middleware needed
   if (!process.env.AUTH_SESSION_SECRET || !process.env.AUTH_OTP_PEPPER) {
     if (request.nextUrl.pathname === "/auth" || request.nextUrl.pathname.startsWith("/auth/")) {

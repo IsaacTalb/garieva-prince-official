@@ -92,10 +92,21 @@ Variables and Secrets**, or use Wrangler. The checked-in config has
 Set these as **Worker secrets** (never commit their values):
 
 - `AUTH_SESSION_SECRET` (at least 32 characters)
-- `AUTH_OTP_PEPPER` (at least 16 characters)
+- `AUTH_OTP_PEPPER` (at least 32 characters)
 - `BREVO_API_KEY`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
+
+Generate independent cryptographically random values locally; do not use a
+human-readable password or reuse another service's credential. This command
+prints 64-character hexadecimal values for both secrets:
+
+```powershell
+node -e "const { randomBytes } = require('node:crypto'); console.log('AUTH_SESSION_SECRET=' + randomBytes(32).toString('hex')); console.log('AUTH_OTP_PEPPER=' + randomBytes(32).toString('hex'))"
+```
+
+Copy each value directly into its matching Cloudflare Worker secret. Never
+commit the values or share them in chat or screenshots.
 
 For each secret, Wrangler prompts for its value:
 
@@ -216,6 +227,11 @@ npm run deploy
 The deployment script builds with `@opennextjs/cloudflare` and deploys the
 production Wrangler environment. Do not deploy with `wrangler deploy` directly:
 the Worker entry point is generated under `.open-next/`.
+
+This project uses `src/middleware.ts` with the Edge runtime for its request
+hook. Next.js 16 `proxy.ts` uses the Node.js runtime, which the current
+OpenNext Cloudflare adapter does not support. Keep the Edge middleware
+convention until the adapter supports Node.js Proxy.
 
 ### Custom Domain Setup
 
