@@ -229,6 +229,12 @@ The deployment script builds with `@opennextjs/cloudflare` and deploys the
 production Wrangler environment. Do not deploy with `wrangler deploy` directly:
 the Worker entry point is generated under `.open-next/`.
 
+The project pins `@opennextjs/cloudflare` to `1.19.0` for compatibility with
+Next.js `16.2.10`. Adapter `1.16.0` does not inline Next.js 16.2's
+`prefetch-hints.json` manifest and causes Worker requests to fail at runtime.
+Keep the adapter and Next.js versions within their declared peer dependency
+range when upgrading.
+
 This project uses `src/middleware.ts` with the Edge runtime for its request
 hook. Next.js 16 `proxy.ts` uses the Node.js runtime, which the current
 OpenNext Cloudflare adapter does not support. Keep the Edge middleware
