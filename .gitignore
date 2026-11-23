@@ -80,7 +80,5 @@ docs/*.md  # Unless explicitly committed
 .supabase/
 .vercel/  # Vercel deployment metadata
 
-# Cloudflare (optional, but good to exclude)
-/cloudflare/
 
 <EOF>
