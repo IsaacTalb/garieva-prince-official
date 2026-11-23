@@ -24,6 +24,7 @@ function parseUserRow(row: Record<string, unknown>): AppUser {
     profile_visibility:
       row.profile_visibility ??
       (Number(row.show_profile_publicly) === 1 ? "public" : "private"),
+    show_wardrobe_publicly: row.show_wardrobe_publicly ?? 0,
   });
 }
 
@@ -148,6 +149,7 @@ export async function updateUserProfile(
         tiktok_url = ${profile.tiktok_url},
         telegram_url = ${profile.telegram_url},
         show_profile_publicly = ${profile.show_profile_publicly ? 1 : 0},
+        show_wardrobe_publicly = ${profile.show_wardrobe_publicly ? 1 : 0},
         show_avatar_publicly = ${profile.show_avatar_publicly ? 1 : 0},
         show_instagram = ${profile.show_instagram ? 1 : 0},
         show_facebook = ${profile.show_facebook ? 1 : 0},

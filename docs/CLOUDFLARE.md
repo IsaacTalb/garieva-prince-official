@@ -82,71 +82,76 @@ Navigate to your bucket settings to obtain:
 
 ---
 
-## 3. Environment Variables for Production
+## 3. Production Worker Variables and Secrets
 
-Create a `.env.production` file (or use Wrangler environment variables):
+Vercel environment variables are not copied to Cloudflare. Configure the
+production Worker in **Workers & Pages → garieva-prince-prod → Settings →
+Variables and Secrets**, or use Wrangler. The checked-in config has
+`keep_vars = true`, so dashboard variables are retained on later deployments.
 
-```bash
-# =============================================================================
-# GARIEVA PRINCE — PRODUCTION ENVIRONMENT
-# =============================================================================
+Set these as **Worker secrets** (never commit their values):
 
-# App Configuration
-APP_BASE_URL=https://your-domain.com
+- `AUTH_SESSION_SECRET` (at least 32 characters)
+- `AUTH_OTP_PEPPER` (at least 16 characters)
+- `BREVO_API_KEY`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
 
-# Database - Cloudflare D1 Binding
-DATABASE_URL=cloudflare:D1:your-database-id
-CLOUDFLARE_D1_DATABASE_NAME=garieva-prince
-
-# Session Secrets - Use strong random values in production!
-AUTH_SESSION_SECRET=your-production-session-secret-min-32-chars
-AUTH_OTP_PEPPER=your-production-pepper-min-16-chars
-
-# Brevo Email Service (REQUIRED)
-BREVO_API_KEY=your-production-brevo-api-key
-BREVO_SENDER_EMAIL=noreply@garieva-prince.com  # Must be verified in Brevo
-BREVO_SENDER_NAME=Garieva Prince
-
-# R2 Media Storage
-R2_ACCOUNT_ID=your-cloudflare-account-id
-R2_ACCESS_KEY_ID=your-r2-access-key
-R2_SECRET_ACCESS_KEY=your-r2-secret-key
-R2_PUBLIC_BUCKET_NAME=garieva-prince-media-public
-R2_PRIVATE_BUCKET_NAME=garieva-prince-media-private
-R2_PUBLIC_BASE_URL=https://garieva-prince-media-public.r2.cloudflarestorage.com
-
-# Admin User ID (from D1 database)
-ADMIN_USER_ID=your-super-admin-user-id-from-d1
-```
-
-### Deploy Secrets via Wrangler
-
-Alternatively, set environment variables directly in Cloudflare:
-
-```bash
-npx wrangler secret put --env production AUTH_SESSION_SECRET "your-secret"
-# ... etc for all secrets
-```
-
-**Best Practice**: Use Wrangler environment variables and keep `.env.production` secure.
-
----
-
-## 4. Wrangler Configuration (`wrangler.toml`)
-
-The checked-in configuration uses OpenNext's `.open-next/worker.js` output and
-a D1 binding named `DB`. Replace the placeholder `database_id` in both the
-default and production binding with the IDs created in your Cloudflare account.
-The production ID is required before `npm run deploy` can succeed.
-
-Keep session, OTP, and email credentials out of `wrangler.toml`; set them as
-Worker secrets:
+For each secret, Wrangler prompts for its value:
 
 ```powershell
 npx wrangler secret put AUTH_SESSION_SECRET --env production
 npx wrangler secret put AUTH_OTP_PEPPER --env production
 npx wrangler secret put BREVO_API_KEY --env production
+npx wrangler secret put R2_ACCESS_KEY_ID --env production
+npx wrangler secret put R2_SECRET_ACCESS_KEY --env production
 ```
+
+Set these as non-secret Worker variables:
+
+- `APP_BASE_URL` — the production site origin
+- `BREVO_SENDER_EMAIL` — required and verified in Brevo
+- `BREVO_SENDER_NAME`
+- `R2_ACCOUNT_ID`
+- `R2_PUBLIC_BUCKET_NAME`
+- `R2_PRIVATE_BUCKET_NAME`
+- `R2_PUBLIC_BASE_URL` — the public bucket's custom domain or public URL
+- `ADMIN_USER_ID` — the D1 user ID for the configured administrator
+
+`DATABASE_URL` and `CLOUDFLARE_D1_DATABASE_NAME` are already declared in
+`wrangler.toml`; D1 access is through the `DB` binding, not a database URL
+secret. This application expects **separate public and private R2 buckets**.
+The Vercel variable `R2_BUCKET_NAME` is not used by the app; assign the
+existing bucket to one role and create a second bucket for the other. Do not
+enable public access on the private bucket.
+
+---
+
+## 4. Wrangler Configuration (`wrangler.toml`)
+
+The checked-in configuration uses OpenNext's `.open-next/worker.js` output, a
+D1 binding named `DB`, and `cloudflare/migrations/` for D1 migrations. It now
+contains the IDs for the dedicated development and production databases
+created for this project. If you recreate either database, update its matching
+`database_id`. Production assets, Images, and self-reference service bindings
+are declared separately because Wrangler environments do not inherit resource
+bindings.
+
+The `nodejs_compat_populate_process_env` compatibility flag is required because
+the application reads Worker variables and secrets through `process.env`.
+`keep_vars = true` preserves non-secret variables entered in the Cloudflare
+dashboard when deploying.
+
+Log into Wrangler and verify the account before managing resources:
+
+```powershell
+npx wrangler login
+npx wrangler whoami
+```
+
+If these databases need to be recreated, use `npx wrangler d1 create` with
+their respective names and update the matching IDs in `wrangler.toml`. Keep
+development and production databases separate.
 
 ---
 
@@ -163,47 +168,24 @@ cloudflare/migrations/
 ├── 0003_cart_items.sql    # Cart items table
 ├── 0004_coupons.sql       # Coupons system
 ├── 0005_ownership_claim_codes.sql  # Claim codes
-└── 0006_payment_approvals.sql      # Payment approvals
+├── 0006_payment_approvals.sql      # Payment approvals
+└── 0007_nfc_verification_events.sql # Public wardrobe consent and replay counters
 ```
 
 ### Apply Migrations to D1
 
-#### Option A: Using SQL Runner (Recommended for initial setup)
+After logging into the Cloudflare account that owns this project's production
+D1 database, apply the numbered migrations once:
 
-1. Visit [Cloudflare Dashboard > Workers & AI > D1](https://dash.cloudflare.com/)
-2. Select your database
-3. Click **"SQL"** tab
-4. Copy each migration file content
-5. Execute via **Run SQL** button
-
-#### Option B: Using Wrangler Migration (Automated)
-
-Create `cloudflare/migrations/apply.sh`:
-
-```bash
-#!/bin/bash
-
-# Apply all D1 migrations to Cloudflare database
-set -e
-
-DB_URL="${DATABASE_URL:-cloudflare:D1:your-database-id}"
-DB_NAME=$(echo $DB_URL | sed 's/cloudflare:D1://' )
-
-for migration_file in cloudflare/migrations/*.sql; do
-  echo "Applying migration: $(basename $migration_file)"
-  
-  # Read migration SQL
-  SQL=$(cat "$migration_file")
-  
-  # Execute via Cloudflare API or SQL Runner
-  # For now, manually run each via Cloudflare Dashboard
-  
-done
-
-echo "All migrations applied successfully!"
+```powershell
+npx wrangler d1 migrations apply DB --remote --env production
 ```
 
-**Note**: For production, prefer manual migration application via SQL Runner to verify each migration.
+The `migrations_dir` setting points Wrangler at `cloudflare/migrations/`.
+Review the pending migration list and back up production data before applying
+schema changes. Do not execute these same files manually in the dashboard SQL
+editor and then run Wrangler migrations: manual SQL does not record the
+migration state Wrangler uses to avoid reapplying files.
 
 ---
 

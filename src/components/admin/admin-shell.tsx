@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, Layers, LayoutDashboard, Menu, Package, Settings, Shield, ShoppingBag, Tag, UserRound, Users } from "lucide-react";
+import { CreditCard, Layers, LayoutDashboard, Menu, Nfc, Package, Settings, Shield, ShoppingBag, Tag, UserRound, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
 const sections = [
@@ -12,6 +12,7 @@ const sections = [
   { title: "New Drops", href: "/admin/drops", icon: Package },
   { title: "Products", href: "/admin/products", icon: Package },
   { title: "Inventory", href: "/admin/inventory", icon: ShoppingBag },
+  { title: "NFC inventory", href: "/admin/nfc", icon: Nfc },
   { title: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { title: "Customers", href: "/admin/customers", icon: Users },
   { title: "Payments", href: "/admin/payments", icon: CreditCard },

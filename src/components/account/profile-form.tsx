@@ -141,6 +141,14 @@ export function ProfileForm({ initialProfile }: { initialProfile: ProfileInput }
         <label className="checkbox-field">
           <input
             type="checkbox"
+            checked={profile.show_wardrobe_publicly}
+            onChange={(event) => update("show_wardrobe_publicly", event.currentTarget.checked)}
+          />
+          Show my ownership history on public garment passports
+        </label>
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
             checked={profile.show_avatar_publicly}
             onChange={(event) => update("show_avatar_publicly", event.currentTarget.checked)}
           />

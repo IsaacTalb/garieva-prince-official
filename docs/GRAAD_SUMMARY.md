@@ -220,7 +220,7 @@ NTAG 424 DNA (Pending Hardware)
 
 ## 🚀 What's Still TODO (Remaining Phases)
 
-### 📋 Phase 7 — Manual Payment + Email Claim Code (Next!)
+### ✅ Phase 7 — Manual Payment + Email Claim Code (Complete)
 - Implement checkout flow with payment proof upload
 - Admin payment approval/rejection workflow  
 - Ownership claim code generation and activation
@@ -238,10 +238,15 @@ IDs and configure production secrets before deployment; Worker preview could not
 be verified in the current Windows environment because its native runtime was
 blocked by Application Control.
 
-### 📋 Phase 9 — NFC Digital Passport Foundation
-- Implement `/piece/[id]` digital passport pages
-- Create NFC verification endpoint (`/nfc/verify`)
-- Build admin NFC provisioning UI
+### ✅ Phase 9 — NFC Digital Passport Foundation (Complete)
+- Added public `/piece/[publicId]` passports and an admin NFC inventory view
+- Added `/nfc/verify` with explicit `VERIFIED`, `UNVERIFIED`, `INVALID`, and `ERROR` states
+- Cryptographic SDM verification remains pending; no tag is reported authentic without it
+- Added monotonic tap-counter storage and explicit public-wardrobe consent
+
+The current schema does not associate products with drops, so passport drop
+details remain “Not assigned” until that relationship is modeled. Phase 10
+will provide physical reader provisioning; it is not simulated here.
 
 ### 📋 Phase 10 — NFC Admin Provisioning  
 - `/admin/nfc/provision` for tag provisioning workflow

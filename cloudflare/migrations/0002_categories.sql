@@ -2,8 +2,6 @@
 -- Adds hierarchical product categories with parent-child relationships
 -- Run after: 0001_core.sql
 
-BEGIN TRANSACTION;
-
 -- Categories table - Hierarchical product categorization
 CREATE TABLE categories (
   id TEXT PRIMARY KEY,
@@ -26,5 +24,3 @@ INSERT INTO categories (id, name, slug, sort_order, created_at) VALUES
   ('CAT-ROOT-FOOTWEAR', 'Footwear', 'footwear', 2, datetime('now')),
   ('CAT-ROOT-ACCESORIES', 'Accessories', 'accessories', 3, datetime('now'))
 ON CONFLICT(id) DO NOTHING;
-
-COMMIT;

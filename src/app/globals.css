@@ -144,6 +144,16 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .account-record dl { display: grid; grid-template-columns: repeat(2,minmax(120px,1fr)); gap: 16px; margin: 0; }
 .account-record dt { color: var(--muted); font-size: 12px; }
 .account-record dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 14px; }
+.passport-layout,.nfc-inventory { display: grid; gap: 16px; }
+.passport-status { display: inline-flex; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; letter-spacing: .04em; }
+.passport-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.passport-fields dt,.nfc-inventory-item dt { color: var(--muted); font-size: 12px; }
+.passport-fields dd,.nfc-inventory-item dd { margin: 4px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.passport-history { display: grid; gap: 12px; padding-left: 20px; }
+.passport-history li { padding-left: 4px; }
+.passport-history strong,.passport-history span { display: block; }
+.passport-history span { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.nfc-inventory-item dl { display: flex; flex-wrap: wrap; gap: 20px; }
 .admin-shell { display: flex; min-height: 100svh; background: white; }
 .admin-sidebar { width: 256px; border-right: 1px solid var(--line); flex-shrink: 0; }
 .admin-sidebar-brand { height: 56px; padding: 18px 16px; display: block; border-bottom: 1px solid var(--line); font-size: 18px; font-weight: 700; }

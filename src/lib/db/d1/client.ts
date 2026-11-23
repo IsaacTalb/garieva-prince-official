@@ -216,6 +216,32 @@ export function getDatabase() {
       sqlBound.exec(fs.readFileSync(migrationPath, "utf8"));
       persistDatabase();
     }
+    const hasInitializedUsersTable = sqlBound.exec(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+    ).length > 0;
+    if (hasInitializedUsersTable) {
+      const userColumns = sqlBound.exec("PRAGMA table_info(users)")[0]?.values ?? [];
+      if (!userColumns.some((column: unknown[]) => column[1] === "show_wardrobe_publicly")) {
+        sqlBound.exec(`
+          ALTER TABLE users
+          ADD COLUMN show_wardrobe_publicly INTEGER NOT NULL DEFAULT 0
+          CHECK (show_wardrobe_publicly IN (0, 1))
+        `);
+      }
+      sqlBound.exec(`
+        CREATE TABLE IF NOT EXISTS nfc_verification_events (
+          id TEXT PRIMARY KEY,
+          product_item_id TEXT NOT NULL,
+          key_version INTEGER NOT NULL CHECK (key_version > 0),
+          tap_counter INTEGER NOT NULL CHECK (tap_counter >= 0),
+          verified_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE (product_item_id, key_version, tap_counter)
+        );
+        CREATE INDEX IF NOT EXISTS idx_nfc_verifications_item
+          ON nfc_verification_events(product_item_id, verified_at DESC)
+      `);
+      persistDatabase();
+    }
   }
 
   return database;

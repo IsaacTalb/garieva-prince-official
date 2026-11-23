@@ -18,6 +18,7 @@ export default async function AccountProfilePage() {
     tiktok_url: user.tiktok_url,
     telegram_url: user.telegram_url,
     show_profile_publicly: user.show_profile_publicly,
+    show_wardrobe_publicly: user.show_wardrobe_publicly,
     show_avatar_publicly: user.show_avatar_publicly,
     show_instagram: user.show_instagram,
     show_facebook: user.show_facebook,

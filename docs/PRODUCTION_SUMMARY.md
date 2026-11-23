@@ -9,7 +9,7 @@
 
 ## Current Status: Phase 8 Complete; Deployment Verification Pending
 
-### Phases Completed: **1-8/18**
+### Phases Completed: **1-9/18**
 
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
@@ -21,8 +21,13 @@
 | 6 | Commerce Features | ✅ Complete | Categories, cart, coupons fully functional |
 | 7 | Manual Payment + Claim Codes | ✅ Complete | Payment approval workflow, claim code generation |
 | 8 | Account / Wardrobe / Profile | ✅ Complete | Authenticated wardrobe, orders, profile, and visibility settings |
+| 9 | NFC Digital Passport Foundation | ✅ Complete | Public garment passport, verification boundary, replay-counter storage, admin inventory |
 
-**Next Phase**: Phase 9 — NFC Digital Passport Foundation
+**Next Phase**: Phase 10 — NFC Admin Provisioning
+
+Phase 9 does not implement NTAG 424 DNA cryptography. Tag verification remains
+`UNVERIFIED` until the physical-tag verifier and managed key infrastructure are
+available. Product-to-drop association is not present in the current D1 schema.
 
 Cloudflare deployment still requires real D1 database IDs and production
 secrets. The Worker preview could not be verified in the current Windows
@@ -53,7 +58,7 @@ environment because Application Control blocked a required native dependency.
 - `ownership_claim_codes.ts` - Claim code management (Phase 7)
 - `client.ts` - D1 client abstraction
 
-### Schema Migrations: **6 Files**
+### Schema Migrations: **7 Files**
 
 - `0001_core.sql` - Core schema (users, products, NFC, ownerships)
 - `0002_categories.sql` - Categories hierarchy
@@ -61,6 +66,7 @@ environment because Application Control blocked a required native dependency.
 - `0004_coupons.sql` - Coupons system with sample data
 - `0005_ownership_claim_codes.sql` - Claim codes table (Phase 7)
 - `0006_payment_approvals.sql` - Payment approvals tracking (Phase 7)
+- `0007_nfc_verification_events.sql` - Public wardrobe consent and replay counters (Phase 9)
 
 ### Authentication: **Custom D1-backed Sessions**
 

@@ -2,8 +2,6 @@
 -- D1 uses SQLite. Foreign keys, COLLATE, and CURRENT_TIMESTAMP are supported.
 -- Run once to create all tables and indexes.
 
-BEGIN TRANSACTION;
-
 -- Users table - Customer accounts with optional profile visibility controls
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
@@ -126,13 +124,14 @@ CREATE TABLE nfc_tags (
 -- Ownership claim codes - One-time codes for item claims via Brevo
 CREATE TABLE ownership_claim_codes (
   id TEXT PRIMARY KEY,
-  product_item_id TEXT NOT NULL UNIQUE,
-  code_hash TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'generated' CHECK (status IN ('generated','active','used','revoked')),
-  activated_at TEXT,
-  used_at TEXT,
-  revoked_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  product_item_id TEXT NOT NULL,
+  code_hash TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (
+    status IN ('active','redeemed','expired','invalidated')
+  ),
+  expires_at TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Ownerships - Current and historical ownership records
@@ -232,5 +231,3 @@ CREATE TABLE audit_logs (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id, created_at DESC);
-
-COMMIT;

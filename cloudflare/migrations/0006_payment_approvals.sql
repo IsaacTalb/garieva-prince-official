@@ -2,8 +2,6 @@
 -- Purpose: Add payment approval tracking table
 -- Phase: 7 - Manual Payment + Email Claim Code
 
-PRAGMA foreign_keys = ON;
-
 -- Create payment approvals table for tracking admin actions
 CREATE TABLE IF NOT EXISTS payment_approvals (
   id TEXT PRIMARY KEY,
@@ -21,12 +19,6 @@ CREATE INDEX IF NOT EXISTS idx_approvals_order_id
 
 CREATE INDEX IF NOT EXISTS idx_approvals_approved_by 
   ON payment_approvals(approved_by);
-
--- Insert sample approval for testing
-INSERT OR IGNORE INTO payment_approvals VALUES
-  ('approval_test_001', 'order_test_payment_001', 
-   'admin_super_admin_id',
-   datetime('now'), NULL, datetime('now'));
 
 -- Create view for admin dashboard (optional)
 CREATE VIEW IF NOT EXISTS v_order_payment_status AS

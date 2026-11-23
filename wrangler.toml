@@ -1,14 +1,19 @@
 name = "garieva-prince"
 main = ".open-next/worker.js"
 compatibility_date = "2024-12-30"
-compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+compatibility_flags = [
+  "nodejs_compat",
+  "nodejs_compat_populate_process_env",
+  "global_fetch_strictly_public",
+]
+keep_vars = true
 
-# Local D1 binding. Replace database_id with the ID from `wrangler d1 create`
-# before deploying to a Cloudflare account.
+# Development D1 binding.
 [[d1_databases]]
 binding = "DB"
 database_name = "garieva-prince-dev"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "bc38b906-1a84-4c37-8fe3-db1cb7c4442e"
+migrations_dir = "cloudflare/migrations"
 
 [assets]
 directory = ".open-next/assets"
@@ -24,6 +29,7 @@ binding = "IMAGES"
 [vars]
 NODE_ENV = "development"
 DATABASE_URL = "cloudflare:D1:garieva-prince-dev"
+CLOUDFLARE_D1_DATABASE_NAME = "garieva-prince-dev"
 
 [env.production]
 name = "garieva-prince-prod"
@@ -31,8 +37,21 @@ name = "garieva-prince-prod"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "garieva-prince-prod"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "a548ae77-2d7b-4928-84bf-266e8fa80e1c"
+migrations_dir = "cloudflare/migrations"
 
 [env.production.vars]
 NODE_ENV = "production"
 DATABASE_URL = "cloudflare:D1:garieva-prince-prod"
+CLOUDFLARE_D1_DATABASE_NAME = "garieva-prince-prod"
+
+[env.production.assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[env.production.services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "garieva-prince-prod"
+
+[env.production.images]
+binding = "IMAGES"

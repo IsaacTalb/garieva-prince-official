@@ -2,8 +2,6 @@
 -- Stores cart items per user session with quantity tracking
 -- Run after: 0002_categories.sql
 
-BEGIN TRANSACTION;
-
 -- Cart items table - Session-based cart storage
 CREATE TABLE cart_items (
   id TEXT PRIMARY KEY,
@@ -20,5 +18,3 @@ CREATE INDEX idx_cart_items_product ON cart_items(product_id);
 -- Create unique constraint to prevent duplicate items for same product+variant
 CREATE UNIQUE INDEX idx_cart_item_unique ON cart_items(user_id, product_id, variant_id) 
   WHERE variant_id IS NOT NULL;
-
-COMMIT;

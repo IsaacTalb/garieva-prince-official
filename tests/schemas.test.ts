@@ -32,6 +32,7 @@ test("identity mapping trusts verified emails only and never accepts profile rol
     tiktok_url: null,
     telegram_url: null,
     show_profile_publicly: false,
+    show_wardrobe_publicly: false,
     show_avatar_publicly: false,
     show_instagram: false,
     show_facebook: false,
