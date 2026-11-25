@@ -22,16 +22,23 @@
 | 7 | Manual Payment + Claim Codes | ✅ Complete | Payment approval workflow, claim code generation |
 | 8 | Account / Wardrobe / Profile | ✅ Complete | Authenticated wardrobe, orders, profile, and visibility settings |
 | 9 | NFC Digital Passport Foundation | ✅ Complete | Public garment passport, verification boundary, replay-counter storage, admin inventory |
+| 10 | NFC Admin Provisioning | 🚧 Scaffold | Item selection, checklist, explicit disconnected-reader adapter; hardware/SDM work pending |
 
-**Next Phase**: Phase 10 — NFC Admin Provisioning
+**Current Phase**: Phase 10 — NFC Admin Provisioning scaffold
 
 Phase 9 does not implement NTAG 424 DNA cryptography. Tag verification remains
 `UNVERIFIED` until the physical-tag verifier and managed key infrastructure are
 available. Product-to-drop association is not present in the current D1 schema.
+Phase 10 does not read or write tags or update provisioning status. Physical
+reader integration, managed key operations, SDM provisioning, and hardware QA
+remain pending hardware selection and security review.
 
-Cloudflare deployment still requires real D1 database IDs and production
-secrets. The Worker preview could not be verified in the current Windows
-environment because Application Control blocked a required native dependency.
+The production Worker is deployed at
+`https://garieva-prince-official.isaac-talb.workers.dev`. Its sign-in page
+returns successfully, and a read-only query to `garieva-prince-prod` succeeds.
+The custom domain still reports D1 as unbound, so it has not been cut over.
+Sign-up/OTP delivery, authenticated admin workflows, R2 writes, and production
+email delivery have not yet been end-to-end tested.
 
 ---
 

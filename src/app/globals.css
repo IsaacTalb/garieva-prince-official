@@ -154,6 +154,23 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .passport-history strong,.passport-history span { display: block; }
 .passport-history span { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .nfc-inventory-item dl { display: flex; flex-wrap: wrap; gap: 20px; }
+.nfc-provisioning { display: grid; gap: 16px; }
+.nfc-reader-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; background: #f9fafb; }
+.nfc-reader-status p { color: var(--muted); margin: 4px 0 0; }
+.nfc-item-selector { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 12px; }
+.nfc-item-selector label { grid-column: 1/-1; font-size: 13px; font-weight: 600; }
+.nfc-item-selector select { min-height: 42px; width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+.nfc-selected-item dl { display: flex; flex-wrap: wrap; gap: 20px; }
+.nfc-selected-item dt { color: var(--muted); font-size: 12px; }
+.nfc-selected-item dd { margin: 4px 0 0; font-size: 14px; }
+.nfc-provision-steps { display: grid; gap: 16px; padding: 0; list-style: none; }
+.nfc-provision-steps li { display: grid; grid-template-columns: 32px minmax(0,1fr); align-items: start; gap: 12px; }
+.nfc-provision-step-number { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: 13px; }
+.nfc-provision-steps li[data-state=ready] .nfc-provision-step-number { color: white; border-color: #111827; background: #111827; }
+.nfc-provision-steps p { margin: 4px 0; color: var(--muted); }
+.nfc-step-state { color: #854d0e; font-size: 12px; }
+.nfc-inventory-item { display: grid; gap: 12px; }
+@media (max-width:767px) { .nfc-item-selector { grid-template-columns: 1fr; } }
 .admin-shell { display: flex; min-height: 100svh; background: white; }
 .admin-sidebar { width: 256px; border-right: 1px solid var(--line); flex-shrink: 0; }
 .admin-sidebar-brand { height: 56px; padding: 18px 16px; display: block; border-bottom: 1px solid var(--line); font-size: 18px; font-weight: 700; }

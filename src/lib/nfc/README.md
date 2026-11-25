@@ -14,7 +14,10 @@ After cryptographic validation, the verification service records the extracted
 key version and tap counter. A unique database constraint rejects a replayed
 counter for the same item and key version. The raw SDM payload is not persisted.
 
-The provisioning adapter is also pending. Physical reader integration, key
-management, tag provisioning, and QA belong to the hardware provisioning phase.
-Public ownership details are returned only for users who opt in to both public
-profiles and public wardrobe visibility.
+The admin provisioning workflow at `/admin/nfc/provision` supports item
+selection and displays the reader connection boundary and required QA steps.
+Its adapter explicitly reports that no reader is connected; it does not read or
+write tags, change inventory status, or claim provisioning succeeded. Physical
+reader integration, managed key service integration, tag provisioning, and
+hardware QA remain pending. Public ownership details are returned only for
+users who opt in to both public profiles and public wardrobe visibility.

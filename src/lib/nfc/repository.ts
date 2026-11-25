@@ -125,6 +125,7 @@ export type NfcInventoryRow = {
   publicId: string;
   productName: string;
   serialNumber: string;
+  itemStatus: string;
   size: string | null;
   color: string | null;
   provisioningStatus: string;
@@ -139,6 +140,7 @@ export async function getNfcInventory(): Promise<NfcInventoryRow[]> {
       pi.id AS product_item_id,
       pi.public_id,
       pi.serial_number,
+      pi.status AS item_status,
       p.name AS product_name,
       pv.size,
       pv.color_name,
@@ -157,6 +159,7 @@ export async function getNfcInventory(): Promise<NfcInventoryRow[]> {
     publicId: String(row.public_id),
     productName: String(row.product_name),
     serialNumber: String(row.serial_number),
+    itemStatus: String(row.item_status),
     size: row.size == null ? null : String(row.size),
     color: row.color_name == null ? null : String(row.color_name),
     provisioningStatus: String(row.provisioning_status ?? "unassigned"),

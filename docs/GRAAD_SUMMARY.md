@@ -248,10 +248,11 @@ The current schema does not associate products with drops, so passport drop
 details remain “Not assigned” until that relationship is modeled. Phase 10
 will provide physical reader provisioning; it is not simulated here.
 
-### 📋 Phase 10 — NFC Admin Provisioning  
-- `/admin/nfc/provision` for tag provisioning workflow
-- NTAG 424 DNA chip verification integration
-- Secure Dynamic Messaging (SDM) implementation
+### 🚧 Phase 10 — NFC Admin Provisioning (Scaffold)
+- Added `/admin/nfc/provision` for item selection and a guided provisioning checklist
+- Added an explicit reader adapter boundary with a visible not-connected state
+- No tag reads/writes, status mutations, chip verification, or SDM cryptography are implemented
+- Real reader/managed-key integration and physical QA remain pending hardware selection
 
 ### 📋 Phase 11 — Ownership Claim
 - `/piece/[id]/claim` claim code validation flow

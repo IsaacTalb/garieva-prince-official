@@ -4,6 +4,7 @@ import {
   verifyNfcScan,
   type NfcVerificationDependencies,
 } from "../src/lib/nfc/verify";
+import { unavailableNfcProvisioningAdapter } from "../src/lib/nfc/provisioning";
 import type { NfcVerificationTarget } from "../src/lib/nfc/types";
 
 const target: NfcVerificationTarget = {
@@ -94,4 +95,17 @@ test("pending cryptographic adapter never asserts authenticity", async () => {
     dependencies({ verifySdm: async () => ({ state: "UNVERIFIED" }) }),
   );
   assert.equal(result.state, "UNVERIFIED");
+});
+
+test("unavailable provisioning adapter makes no tag or provisioning claims", async () => {
+  const connection = await unavailableNfcProvisioningAdapter.getReaderConnection();
+  const read = await unavailableNfcProvisioningAdapter.readTag();
+  const provision = await unavailableNfcProvisioningAdapter.provision({
+    productItemId: "item-001",
+    serialNumber: "GP001",
+  });
+
+  assert.equal(connection.state, "NOT_CONNECTED");
+  assert.equal(read.state, "NOT_CONNECTED");
+  assert.equal(provision.state, "NOT_CONNECTED");
 });

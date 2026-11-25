@@ -18,7 +18,7 @@ Before deploying to Cloudflare, ensure the following are configured:
 - [ ] **R2 Buckets Created**: Set up public and private R2 buckets
 - [ ] **Brevo Account**: API key obtained and sender email verified
 - [ ] **Environment Variables**: Production secrets configured
-- [ ] **NFC Hardware**: Optional (provisioning available, not required for launch)
+- [ ] **NFC Hardware**: Optional; the admin workflow is a scaffold, and reader/SDM integration remains pending
 
 ### Deployment Steps
 
