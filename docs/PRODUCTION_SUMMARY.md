@@ -23,8 +23,9 @@
 | 8 | Account / Wardrobe / Profile | ✅ Complete | Authenticated wardrobe, orders, profile, and visibility settings |
 | 9 | NFC Digital Passport Foundation | ✅ Complete | Public garment passport, verification boundary, replay-counter storage, admin inventory |
 | 10 | NFC Admin Provisioning | 🚧 Scaffold | Item selection, checklist, explicit disconnected-reader adapter; hardware/SDM work pending |
+| 11 | Ownership Claim | ✅ Implemented | Authenticated code claim, atomic D1 ownership assignment, audit event, public owner visibility |
 
-**Current Phase**: Phase 10 — NFC Admin Provisioning scaffold
+**Current Phase**: Phase 12 — Ownership Transfer
 
 Phase 9 does not implement NTAG 424 DNA cryptography. Tag verification remains
 `UNVERIFIED` until the physical-tag verifier and managed key infrastructure are
@@ -32,6 +33,10 @@ available. Product-to-drop association is not present in the current D1 schema.
 Phase 10 does not read or write tags or update provisioning status. Physical
 reader integration, managed key operations, SDM provisioning, and hardware QA
 remain pending hardware selection and security review.
+Phase 11 requires a provisioned, UID-linked NFC tag and an approved order
+allocation. Claim codes are random, pepper-hashed, expire after 24 hours, and
+are emailed to the approved order's customer. No claim has been completed
+against production data during validation.
 
 The production Worker is deployed at
 `https://garieva-prince-official.isaac-talb.workers.dev`. Its sign-in page

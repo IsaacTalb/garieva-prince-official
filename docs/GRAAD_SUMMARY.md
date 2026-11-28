@@ -254,10 +254,14 @@ will provide physical reader provisioning; it is not simulated here.
 - No tag reads/writes, status mutations, chip verification, or SDM cryptography are implemented
 - Real reader/managed-key integration and physical QA remain pending hardware selection
 
-### 📋 Phase 11 — Ownership Claim
-- `/piece/[id]/claim` claim code validation flow
-- Ownership creation on successful claim
-- Email confirmation via Brevo
+### ✅ Phase 11 — Ownership Claim
+- Added authenticated `/piece/[publicId]/claim` and `/api/ownership/claim`
+- Codes are high-entropy, pepper-hashed, one-time, and expire after 24 hours
+- Requires an approved payment/order allocation and provisioned NFC item
+- Consumes the code, creates ownership, updates item status, and writes an audit event atomically
+- Added admin-only approved-order code issuance via Brevo
+- Public passport displays owner avatar/name/username/socials only when profile and wardrobe visibility are enabled
+- Concurrency and replay behavior is covered by database integration tests
 
 ### 📋 Phase 12 — Ownership Transfer
 - Resale marketplace listings

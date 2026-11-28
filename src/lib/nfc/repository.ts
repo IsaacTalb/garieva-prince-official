@@ -2,8 +2,21 @@ import "server-only";
 import { getDatabase } from "@/lib/db/d1/client";
 import type {
   NfcPassport,
+  NfcClaimableItem,
   NfcVerificationTarget,
 } from "./types";
+
+function publicProfileUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getNfcVerificationTarget(
   publicId: string,
@@ -68,7 +81,13 @@ export async function getPublicNfcPassport(
       p.name AS product_name,
       pv.size,
       pv.color_name,
-      COALESCE(NULLIF(trim(owner.name), ''), owner.username) AS current_owner
+      owner.name AS owner_name,
+      owner.username AS owner_username,
+      CASE WHEN owner.show_avatar_publicly = 1 THEN owner.avatar_url END AS owner_avatar_url,
+      CASE WHEN owner.show_instagram = 1 THEN owner.instagram_url END AS owner_instagram_url,
+      CASE WHEN owner.show_facebook = 1 THEN owner.facebook_url END AS owner_facebook_url,
+      CASE WHEN owner.show_tiktok = 1 THEN owner.tiktok_url END AS owner_tiktok_url,
+      CASE WHEN owner.show_telegram = 1 THEN owner.telegram_url END AS owner_telegram_url
     FROM product_items pi
     JOIN products p ON p.id = pi.product_id
     LEFT JOIN product_variants pv ON pv.id = pi.variant_id
@@ -110,13 +129,85 @@ export async function getPublicNfcPassport(
     color: item.color_name == null ? null : String(item.color_name),
     serialNumber: String(item.serial_number),
     authenticity: "UNVERIFIED",
-    currentOwner: item.current_owner == null ? null : String(item.current_owner),
+    currentOwner:
+      item.owner_name == null && item.owner_username == null
+        ? null
+        : {
+            displayName: item.owner_name == null ? null : String(item.owner_name),
+            username:
+              item.owner_username == null ? null : String(item.owner_username),
+            avatarUrl:
+              publicProfileUrl(item.owner_avatar_url),
+            instagramUrl:
+              publicProfileUrl(item.owner_instagram_url),
+            facebookUrl:
+              publicProfileUrl(item.owner_facebook_url),
+            tiktokUrl:
+              publicProfileUrl(item.owner_tiktok_url),
+            telegramUrl:
+              publicProfileUrl(item.owner_telegram_url),
+          },
     ownershipHistory: historyRows.map((row) => ({
       displayName: String(row.display_name),
       startedAt: String(row.started_at),
       endedAt: row.ended_at == null ? null : String(row.ended_at),
       acquisitionType: String(row.acquisition_type),
     })),
+  };
+}
+
+export async function getNfcClaimableItem(
+  publicId: string,
+): Promise<NfcClaimableItem | null> {
+  const db = getDatabase();
+  const [row] = await db`
+    SELECT
+      pi.public_id,
+      pi.serial_number,
+      p.name AS product_name,
+      pv.size,
+      pv.color_name,
+      CASE WHEN
+        pi.status != 'retired'
+        AND nt.chip_uid IS NOT NULL
+        AND nt.provisioning_status IN ('provisioned', 'qa_passed')
+        AND EXISTS (
+          SELECT 1
+          FROM order_items oi
+          JOIN orders o ON o.id = oi.order_id
+          JOIN payments payment
+            ON payment.order_id = o.id AND payment.status = 'approved'
+          WHERE oi.product_item_id = pi.id
+            AND o.status IN ('paid', 'processing', 'shipped', 'delivered')
+            AND o.payment_status = 'approved'
+        )
+        AND EXISTS (
+          SELECT 1 FROM ownership_claim_codes claim
+          WHERE claim.product_item_id = pi.id
+            AND claim.status = 'active'
+            AND datetime(claim.expires_at) > datetime('now')
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM ownerships existing
+          WHERE existing.product_item_id = pi.id
+        )
+      THEN 1 ELSE 0 END AS eligible
+    FROM product_items pi
+    JOIN products p ON p.id = pi.product_id
+    LEFT JOIN product_variants pv ON pv.id = pi.variant_id
+    LEFT JOIN nfc_tags nt ON nt.product_item_id = pi.id
+    WHERE pi.public_id = ${publicId}
+    LIMIT 1
+  `;
+  if (!row) return null;
+
+  return {
+    publicId: String(row.public_id),
+    productName: String(row.product_name),
+    serialNumber: String(row.serial_number),
+    size: row.size == null ? null : String(row.size),
+    color: row.color_name == null ? null : String(row.color_name),
+    eligible: Number(row.eligible) === 1,
   };
 }
 

@@ -21,3 +21,15 @@ write tags, change inventory status, or claim provisioning succeeded. Physical
 reader integration, managed key service integration, tag provisioning, and
 hardware QA remain pending. Public ownership details are returned only for
 users who opt in to both public profiles and public wardrobe visibility.
+
+Ownership claims require an authenticated account, an active pepper-hashed
+one-time code, a linked non-retired provisioned tag, an approved original
+order/payment allocated to that exact item, and no existing ownership history.
+Code consumption, ownership creation, item status update, and the audit event
+run in one D1 batch (or one local SQLite transaction). A partial unique index
+permits only one current owner; a replay or concurrent claim cannot create a
+second owner. `/api/admin/ownership-claims` issues the code by email only for
+an administrator-selected approved order/item allocation. This database
+association is not cryptographic proof that a physical tag was tapped; the
+SDM verification boundary remains explicitly `UNVERIFIED` until hardware and
+managed-key verification are integrated.

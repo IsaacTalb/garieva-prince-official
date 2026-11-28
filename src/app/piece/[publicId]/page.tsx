@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { Facebook, Instagram, Music2, Send, UserRound } from "lucide-react";
 import { PageIntro } from "@/components/shared/page-intro";
 import { getPublicNfcPassport } from "@/lib/nfc/repository";
 import { nfcVerificationInputSchema } from "@/lib/nfc/types";
@@ -54,7 +57,60 @@ export default async function DigitalPassportPage({
         <section className="content-card">
           <h2>Public ownership</h2>
           {passport.currentOwner ? (
-            <p>Current public owner: {passport.currentOwner}</p>
+            <div className="passport-owner">
+              <p className="eyebrow">Current owner</p>
+              <div className="passport-owner-profile">
+                {passport.currentOwner.avatarUrl ? (
+                  <Image
+                    className="passport-owner-avatar"
+                    src={passport.currentOwner.avatarUrl}
+                    alt=""
+                    width={64}
+                    height={64}
+                    unoptimized
+                  />
+                ) : (
+                  <span className="passport-owner-avatar passport-owner-avatar-fallback" aria-hidden="true">
+                    <UserRound size={26} />
+                  </span>
+                )}
+                <div>
+                  <strong>
+                    {passport.currentOwner.displayName ??
+                      (passport.currentOwner.username
+                        ? `@${passport.currentOwner.username}`
+                        : "Current owner")}
+                  </strong>
+                  {passport.currentOwner.username ? (
+                    <p className="passport-owner-username">
+                      @{passport.currentOwner.username}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="passport-owner-socials" aria-label="Public social profiles">
+                {passport.currentOwner.instagramUrl ? (
+                  <a href={passport.currentOwner.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram">
+                    <Instagram size={18} />
+                  </a>
+                ) : null}
+                {passport.currentOwner.facebookUrl ? (
+                  <a href={passport.currentOwner.facebookUrl} target="_blank" rel="noreferrer" aria-label="Facebook">
+                    <Facebook size={18} />
+                  </a>
+                ) : null}
+                {passport.currentOwner.tiktokUrl ? (
+                  <a href={passport.currentOwner.tiktokUrl} target="_blank" rel="noreferrer" aria-label="TikTok">
+                    <Music2 size={18} />
+                  </a>
+                ) : null}
+                {passport.currentOwner.telegramUrl ? (
+                  <a href={passport.currentOwner.telegramUrl} target="_blank" rel="noreferrer" aria-label="Telegram">
+                    <Send size={18} />
+                  </a>
+                ) : null}
+              </div>
+            </div>
           ) : (
             <p>The current owner has not chosen to share this information.</p>
           )}
@@ -71,6 +127,11 @@ export default async function DigitalPassportPage({
             <p>No ownership history has been shared publicly.</p>
           )}
         </section>
+        <p>
+          <Link className="primary-link" href={`/piece/${encodeURIComponent(passport.publicId)}/claim`}>
+            Have an ownership code? Claim this piece
+          </Link>
+        </p>
       </section>
     </>
   );

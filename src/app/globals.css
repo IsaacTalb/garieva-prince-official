@@ -153,6 +153,18 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .passport-history li { padding-left: 4px; }
 .passport-history strong,.passport-history span { display: block; }
 .passport-history span { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.passport-owner { display: grid; gap: 12px; }
+.passport-owner-profile { display: flex; align-items: center; gap: 14px; }
+.passport-owner-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #f3f4f6; }
+.passport-owner-avatar-fallback { display: grid; place-items: center; color: var(--muted); }
+.passport-owner-username { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.passport-owner-socials { display: flex; gap: 12px; }
+.passport-owner-socials a { display: inline-flex; padding: 8px; border: 1px solid var(--line); border-radius: 50%; }
+.claim-ownership-page { display: grid; gap: 16px; }
+.claim-ownership-form { display: grid; gap: 10px; margin-top: 24px; }
+.claim-ownership-form label { font-size: 13px; font-weight: 600; }
+.claim-ownership-form input { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; letter-spacing: .08em; }
+.claim-ownership-form .primary-link { justify-self: start; }
 .nfc-inventory-item dl { display: flex; flex-wrap: wrap; gap: 20px; }
 .nfc-provisioning { display: grid; gap: 16px; }
 .nfc-reader-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; background: #f9fafb; }

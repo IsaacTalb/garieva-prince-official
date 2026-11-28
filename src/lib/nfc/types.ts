@@ -49,11 +49,28 @@ export type NfcPassport = {
   color: string | null;
   serialNumber: string;
   authenticity: NfcVerificationState;
-  currentOwner: string | null;
+  currentOwner: {
+    displayName: string | null;
+    username: string | null;
+    avatarUrl: string | null;
+    instagramUrl: string | null;
+    facebookUrl: string | null;
+    tiktokUrl: string | null;
+    telegramUrl: string | null;
+  } | null;
   ownershipHistory: {
     displayName: string;
     startedAt: string;
     endedAt: string | null;
     acquisitionType: string;
   }[];
+};
+
+export type NfcClaimableItem = {
+  publicId: string;
+  productName: string;
+  serialNumber: string;
+  size: string | null;
+  color: string | null;
+  eligible: boolean;
 };

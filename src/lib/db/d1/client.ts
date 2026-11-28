@@ -65,6 +65,9 @@ type D1Statement = {
 };
 type D1Binding = {
   prepare(query: string): D1Statement;
+  batch(
+    statements: D1Statement[],
+  ): Promise<Array<{ meta?: { changes?: number } }>>;
 };
 
 declare global {
@@ -143,8 +146,14 @@ type DatabaseClient = ((
   ...values: unknown[]
 ) => QueryRow[] | Promise<QueryRow[]>) & {
   prepare: typeof createStatement;
+  batch: (statements: DatabaseBatchStatement[]) => Promise<number[]>;
   exec: (query: string) => unknown[];
   getRowsModified: () => number;
+};
+
+export type DatabaseBatchStatement = {
+  query: string;
+  params: unknown[];
 };
 
 function createDatabaseClient(): DatabaseClient {
@@ -173,6 +182,32 @@ function createDatabaseClient(): DatabaseClient {
   }) as DatabaseClient;
 
   client.prepare = createStatement;
+  client.batch = async (statements) => {
+    const localDatabase = getLocalDatabase();
+    localDatabase.exec("BEGIN TRANSACTION");
+    transactionOpen = true;
+    try {
+      const changes = statements.map(({ query, params }) => {
+        const statement = localDatabase.prepare(query);
+        try {
+          statement.bind(params.map(toSQLiteValue));
+          statement.step();
+          statement.reset();
+          return localDatabase.getRowsModified();
+        } finally {
+          statement.free();
+        }
+      });
+      localDatabase.exec("COMMIT");
+      transactionOpen = false;
+      persistDatabase();
+      return changes;
+    } catch (error) {
+      localDatabase.exec("ROLLBACK");
+      transactionOpen = false;
+      throw error;
+    }
+  };
   client.exec = (query: string) => {
     const localDatabase = getLocalDatabase();
     const results = localDatabase.exec(query);
@@ -225,6 +260,14 @@ function createD1DatabaseClient(binding: D1Binding) {
   }) as DatabaseClient;
   client.prepare = () => {
     throw new Error("Synchronous prepared statements are not supported by D1.");
+  };
+  client.batch = async (statements) => {
+    const results = await binding.batch(
+      statements.map(({ query, params }) =>
+        binding.prepare(query).bind(...params.map(toD1Value)),
+      ),
+    );
+    return results.map((result) => Number(result.meta?.changes ?? 0));
   };
   client.exec = () => {
     throw new Error("Raw synchronous SQL is not supported by D1.");

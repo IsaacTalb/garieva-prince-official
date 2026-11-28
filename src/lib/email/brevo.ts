@@ -106,6 +106,54 @@ export async function sendOtpWithTemplate({
   });
 }
 
+export async function sendOwnershipClaimCodeEmail({
+  to,
+  productName,
+  size,
+  serial,
+  code,
+  expiresAt,
+}: {
+  to: { email: string; name?: string | null }[];
+  productName: string;
+  size: string | null;
+  serial: string;
+  code: string;
+  expiresAt: string;
+}): Promise<string> {
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (character) => {
+      const entities: Record<string, string> = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[character];
+    });
+  const safeProductName = escapeHtml(productName);
+  const safeSize = escapeHtml(size ?? "Not specified");
+  const safeSerial = escapeHtml(serial);
+  const safeCode = escapeHtml(code);
+  const safeExpiry = escapeHtml(expiresAt);
+
+  return sendOtpEmail({
+    to,
+    subject: "Your Garieva Prince ownership code",
+    htmlContent: `
+      <main style="font-family:Arial,sans-serif;line-height:1.6;color:#222">
+        <h1>Your ownership code is ready</h1>
+        <p>${safeProductName} · ${safeSize} · ${safeSerial}</p>
+        <p>Enter this one-time code on the garment passport while signed in:</p>
+        <p style="font-size:24px;font-weight:bold;letter-spacing:2px">${safeCode}</p>
+        <p>This code expires at ${safeExpiry} UTC.</p>
+        <p>If you did not expect this message, contact support@garievaprince.com.</p>
+      </main>`,
+    textContent: `Your Garieva Prince ownership code is ${code}. It expires at ${expiresAt} UTC.`,
+  });
+}
+
 /**
  * Generate OTP email HTML with styling
  */
