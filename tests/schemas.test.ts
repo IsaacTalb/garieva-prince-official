@@ -51,6 +51,7 @@ test("media validation rejects unbounded files, active content, and caller-speci
     assert.equal(mediaInputSchema.safeParse({ ...media, ...invalid }).success, false);
   }
   assert.equal(privateObjectKeySchema.safeParse(`order/${uuid}/${uuid}.png`).success, true);
+  assert.equal(privateObjectKeySchema.safeParse(`order/${uuid}/${uuid}.pdf`).success, true);
   assert.equal(privateObjectKeySchema.safeParse(`product/${uuid}/${uuid}.png`).success, false);
 });
 

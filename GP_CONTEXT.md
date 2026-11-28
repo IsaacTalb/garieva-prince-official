@@ -1462,6 +1462,23 @@ PHASE 13 — RESALE MARKETPLACE
 
 Implement resale system.
 
+Implementation status: completed locally; production deployment and migration
+are pending. The user-selected operating rules are:
+
+- Buyers submit a transaction reference after contacting GP for current payment
+  instructions; GP verifies payments manually.
+- Buyer and seller arrange and pay for shipping separately.
+- Buyers confirm delivery from their account before ownership changes.
+- An unpaid reservation expires after 24 hours if no payment reference was
+  submitted; referenced payments remain reserved for GP review.
+- Sellers upload one to five JPEG/PNG listing photos to the public R2 bucket.
+- GP retains 5% and the seller receives 95%; payout is marked by an admin with
+  a payout reference only after delivery and ownership transfer.
+
+Apply `cloudflare/migrations/0009_resale_marketplace.sql` to production D1 before
+enabling this feature. Do not deploy the migration or change production data
+without explicit approval.
+
 Current owner can:
 
 List for Resale
@@ -1559,6 +1576,17 @@ Customer:
 Account
 → Orders
 → Order Detail
+
+Implementation status: completed locally. Migration `0010_delivery_challan.sql`
+adds the active/replaced/removed lifecycle while preserving document history.
+Delivery files are limited to 10 MB and stored in private R2; each read requires
+an authenticated customer who owns the order or an authenticated administrator.
+Apply migration `0010_delivery_challan.sql` to production D1 before enabling the
+workflow there.
+The Windows OpenNext build completes, but local Wrangler preview currently
+fails at runtime with `ChunkLoadError` under OpenNext 1.19.0 / Next.js 16.2.10.
+Validate the Worker in Linux/WSL or a mutually supported version pair before
+considering runtime verification complete.
 
 Display:
 

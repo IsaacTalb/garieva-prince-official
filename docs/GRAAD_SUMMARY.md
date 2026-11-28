@@ -272,14 +272,20 @@ will provide physical reader provisioning; it is not simulated here.
 - Apply migration `0008_ownership_transfers.sql` to production D1 before deploying/enabling this flow
 - Marketplace listings and seller payouts remain out of scope for this phase
 
-### 📋 Phase 13 — Resale Marketplace (Partially Started)
-- Complete resale listing UI
-- Purchase flow through GP checkout
-- Settlement and payout tracking
+### ✅ Phase 13 — Resale Marketplace (Implemented locally; production migration pending)
+- Added public resale listings, authenticated seller listing/photo upload, and dedicated resale checkout
+- Added manual GP payment-reference submission and admin approval/rejection
+- Buyers and sellers arrange shipping separately; buyers confirm delivery before atomic ownership transfer
+- Enforced a 24-hour unpaid reservation, 5% GP fee / 95% seller share, and admin payout-reference tracking
+- Sellers upload up to five JPEG/PNG photos to the public R2 bucket
+- Added lifecycle integration tests; apply `0009_resale_marketplace.sql` to production D1 before deployment
 
-### 📋 Phase 14 — Delivery Challan Upload (Partially Started)
-- Admin order page with document upload
-- Customer delivery proof viewing from account/orders
+### ✅ Phase 14 — Delivery Challan Upload (Implemented locally; production migration pending)
+- Added admin order list/detail pages with courier, tracking, challan upload, replacement, and removal
+- Accepts PDF, JPEG, PNG, and WebP files up to 10 MB and stores them in private R2
+- Added customer order-detail access through short-lived signed URLs after ownership authorization
+- Audits upload, replacement, and removal while preserving the document lifecycle in D1
+- Apply `0010_delivery_challan.sql` to production D1 before deployment
 
 ### 📋 Phase 15 — Restock Notifications  
 - Email subscription management

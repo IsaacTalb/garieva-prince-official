@@ -61,44 +61,6 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Re-send OTP for new user
- */
-export async function POSTResend(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { email } = body;
-
-    if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { error: "Email required", code: "MISSING_EMAIL" },
-        { status: 400 }
-      );
-    }
-
-    // Wait a bit between OTPs to prevent spam
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const otpRecord = await import("@/lib/auth/otp").then(m => m.resendOtp({
-      email: email.trim().toLowerCase(),
-      purpose: "sign_up",
-    }));
-
-    return NextResponse.json({
-      success: true,
-      message: "New verification code sent.",
-      otpId: otpRecord.id,
-    });
-  } catch (error) {
-    console.error("Resend OTP error:", error);
-    
-    return NextResponse.json(
-      { error: "Failed to resend verification code", code: "INTERNAL_ERROR" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
  * Get OTP status (for debugging/admin)
  */
 export async function GET(request: NextRequest) {

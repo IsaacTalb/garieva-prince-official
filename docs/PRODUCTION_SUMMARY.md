@@ -7,9 +7,9 @@
 
 ---
 
-## Current Status: Phase 12 Implemented Locally; Production Migration Pending
+## Current Status: Phase 14 Implemented Locally; Production Migrations Pending
 
-### Phases Implemented: **1-9, 11-12**
+### Phases Implemented: **1-9, 11-14**
 
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
@@ -25,9 +25,13 @@
 | 10 | NFC Admin Provisioning | 🚧 Scaffold | Item selection, checklist, explicit disconnected-reader adapter; hardware/SDM work pending |
 | 11 | Ownership Claim | ✅ Implemented | Authenticated code claim, atomic D1 ownership assignment, audit event, public owner visibility |
 | 12 | Ownership Transfer | ✅ Implemented locally | Existing-account recipient acceptance, sender confirmation, atomic ownership swap, expiry and audit |
+| 13 | Resale Marketplace | ✅ Implemented locally | Listings/photos, manual payment verification, delivery transfer, 5% fee, payout tracking |
+| 14 | Delivery Challan | ✅ Implemented locally | Admin upload/replace/remove, private R2, authorized customer access, audit history |
 
-**Current Phase**: Phase 12 implementation is complete locally. Apply migration
-`0008_ownership_transfers.sql` to production D1 before enabling transfers there.
+**Current Phase**: Phase 14 implementation is complete locally. Apply migrations
+`0008_ownership_transfers.sql`, `0009_resale_marketplace.sql`, and
+`0010_delivery_challan.sql` to production D1 before enabling transfers, resale,
+and delivery-document workflows.
 
 Phase 9 does not implement NTAG 424 DNA cryptography. Tag verification remains
 `UNVERIFIED` until the physical-tag verifier and managed key infrastructure are
@@ -49,6 +53,19 @@ email delivery have not yet been end-to-end tested.
 Phase 12 has not been applied to production D1 or deployed. Transfers require
 the recipient to have an existing account; requests expire after seven days.
 The item status and NFC association remain unchanged during transfer.
+Phase 13 has not been applied to production D1 or deployed. Resale uses manual
+GP payment verification, separately arranged shipping, a 24-hour unpaid
+reservation, and seller-uploaded R2 photos. Production payment instructions
+must be supplied to customers through GP support.
+Phase 14 has not been applied to production D1 or deployed. Delivery challans
+are stored privately in R2; customer downloads are authorized against the
+current account's order and use short-lived signed URLs.
+
+OpenNext builds successfully on this Windows workstation, but Wrangler preview
+returns `ChunkLoadError` at runtime with the installed OpenNext 1.19.0 and
+Next.js 16.2.10. WSL is not installed here, so Worker runtime validation must
+use Linux/WSL or a mutually supported Next.js/OpenNext version pair. No
+production migration or deployment was performed.
 
 ---
 
@@ -75,7 +92,7 @@ The item status and NFC association remain unchanged during transfer.
 - `ownership_claim_codes.ts` - Claim code management (Phase 7)
 - `client.ts` - D1 client abstraction
 
-### Schema Migrations: **8 Files**
+### Schema Migrations: **10 Files**
 
 - `0001_core.sql` - Core schema (users, products, NFC, ownerships)
 - `0002_categories.sql` - Categories hierarchy
@@ -85,6 +102,8 @@ The item status and NFC association remain unchanged during transfer.
 - `0006_payment_approvals.sql` - Payment approvals tracking (Phase 7)
 - `0007_nfc_verification_events.sql` - Public wardrobe consent and replay counters (Phase 9)
 - `0008_ownership_transfers.sql` - Ownership transfer lifecycle and active-transfer constraints (Phase 12)
+- `0009_resale_marketplace.sql` - Listings, photos, payment reservations, sale lifecycle, and payouts (Phase 13)
+- `0010_delivery_challan.sql` - Delivery document lifecycle, replacement history, and one-active-document constraint (Phase 14)
 
 ### Authentication: **Custom D1-backed Sessions**
 
@@ -413,14 +432,14 @@ https://github.com/IsaacTalb/garieva-prince-official
 - ✅ Complete commerce features (catalog, cart, coupons)
 - ✅ Manual payment approval workflow
 - ✅ Claim code generation and email delivery
-- ✅ All migrations applied
+- ⚠️ Phase 12 and 13 migrations have not been applied to production D1
 - ✅ Build errors resolved
 - ✅ Production deployment documentation
 
 ### What You Need Before Deploying:
 1. ⚠️ **Brevo API key** (required for OTP emails)
-2. ⚠️ **Database setup** (Cloudflare D1 or PostgreSQL)
-3. ⚠️ **Deploy platform chosen** (Cloudflare, Vercel, Railway, or Render)
+2. ⚠️ **Cloudflare D1 migration state verified** (apply migrations 0008 and 0009 before enabling Phases 12 and 13)
+3. ⚠️ **Cloudflare Workers deployment** configured with production runtime variables/secrets
 
 ---
 
@@ -448,7 +467,7 @@ https://github.com/IsaacTalb/garieva-prince-official
 
 ---
 
-**Current Status**: ✅ Production Ready (Phases 1-7 Complete)  
+**Current Status**: Phases 1-13 implemented locally; production migrations and end-to-end rollout remain pending
 **Git Author**: Isaac Talb (<thaungahlaybaw@gmail.com>)  
 **Deployment Target**: Cloudflare Workers / Vercel / Railway / Render  
 

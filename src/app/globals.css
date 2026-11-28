@@ -154,6 +154,48 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .account-record dl { display: grid; grid-template-columns: repeat(2,minmax(120px,1fr)); gap: 16px; margin: 0; }
 .account-record dt { color: var(--muted); font-size: 12px; }
 .account-record dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 14px; }
+.resale-policy { margin-bottom: 24px; }
+.resale-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 20px; }
+.resale-card { overflow: hidden; padding: 0; }
+.resale-card-image { display: block; width: 100%; height: 300px; object-fit: cover; background: #f3f1ed; }
+.resale-image-empty { display: grid; place-items: center; color: var(--muted); }
+.resale-card-copy { display: grid; gap: 10px; padding: 20px; }
+.resale-card-copy h2,.resale-record h3 { margin: 0; }
+.resale-card-copy p,.resale-record p { margin: 0; }
+.resale-price { color: #171717 !important; font-size: 18px !important; font-weight: 600; }
+.resale-checkout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; gap: 20px; }
+.resale-checkout-piece > img { display: block; width: 100%; max-height: 480px; object-fit: contain; margin-bottom: 20px; background: #f3f1ed; }
+.resale-form,.resale-actions { display: grid; gap: 12px; margin-top: 16px; }
+.resale-form label,.resale-actions label { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
+.resale-form input,.resale-form textarea,.resale-form select,.resale-actions input { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: white; color: inherit; }
+.resale-form textarea { min-height: 90px; resize: vertical; }
+.resale-form button,.resale-actions button { justify-self: start; cursor: pointer; }
+.resale-form button:disabled,.resale-actions button:disabled { cursor: wait; opacity: .6; }
+.form-message { min-height: 1em; margin: 0; color: #8b2f24; font-size: 12px; }
+.resale-account-section { display: grid; gap: 16px; margin-top: 36px; }
+.resale-account-section > h2 { margin: 0; font-size: 22px; }
+.resale-owner-item,.resale-record { display: flex; align-items: flex-start; gap: 20px; }
+.resale-owner-item > img,.resale-record > img { width: 120px; height: 160px; object-fit: cover; background: #f3f1ed; }
+.resale-owner-item > div,.resale-record-copy { flex: 1; min-width: 0; }
+.resale-record-copy { display: grid; gap: 12px; }
+.resale-record dl { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 0; }
+.resale-record dl > div { min-width: 120px; }
+.resale-admin-record { display: grid; gap: 20px; }
+.resale-admin-record dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 14px; margin: 0; }
+.resale-admin-record dd { overflow-wrap: anywhere; }
+@media (max-width:767px) { .resale-checkout { grid-template-columns: 1fr; } .resale-owner-item,.resale-record { flex-direction: column; } }
+.order-detail-layout { display: grid; align-content: start; gap: 20px; }
+.order-detail-facts { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 16px; margin: 20px 0 0; }
+.order-detail-facts dt { color: var(--muted); font-size: 12px; }
+.order-detail-facts dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 14px; }
+.delivery-challan-admin,.delivery-challan-form { display: grid; gap: 16px; }
+.delivery-challan-admin h2,.delivery-challan-customer h3 { margin: 0; }
+.delivery-challan-current p { margin: 0 0 12px; }
+.delivery-challan-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
+.delivery-challan-form input { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.delivery-challan-form button { justify-self: start; cursor: pointer; }
+.delivery-challan-customer { display: grid; justify-items: start; gap: 12px; margin-top: 24px; }
+.delivery-challan-admin .form-actions { margin-top: 0; }
 .passport-layout,.nfc-inventory { display: grid; gap: 16px; }
 .passport-status { display: inline-flex; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; letter-spacing: .04em; }
 .passport-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }

@@ -34,7 +34,7 @@ test("D1 migrations apply and enforce core data constraints", async () => {
       .filter((name) => /^\d+.*\.sql$/.test(name))
       .sort();
 
-    assert.equal(migrationFiles.length, 8);
+    assert.equal(migrationFiles.length, 10);
     for (const migration of migrationFiles) {
       db.exec(await readFile(path.join(migrationsDirectory, migration), "utf8"));
     }

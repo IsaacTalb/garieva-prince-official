@@ -16,6 +16,7 @@ const sections = [
   { title: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { title: "Customers", href: "/admin/customers", icon: Users },
   { title: "Payments", href: "/admin/payments", icon: CreditCard },
+  { title: "Resale", href: "/admin/resale", icon: Tag },
   { title: "Coupons", href: "/admin/coupons", icon: Tag },
   { title: "Website Settings", href: "/admin/settings", icon: Settings },
   { title: "Admins", href: "/admin/admins", icon: Shield },

@@ -86,23 +86,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-/**
- * Logout - revoke session token
- */
-export async function POSTLogout() {
-  const response = NextResponse.redirect("/");
-  
-  // Revoke the session cookie
-  response.cookies.set(
-    "auth_session_token",
-    "",
-    { 
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === "production", 
-      maxAge: 0 
-    }
-  );
-  
-  return response;
-}

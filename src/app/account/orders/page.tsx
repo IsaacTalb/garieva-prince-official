@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageIntro } from "@/components/shared/page-intro";
 import { requirePageUser } from "@/lib/auth/session";
 import { getUserOrders } from "@/lib/db/d1/orders";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My orders" };
@@ -42,6 +43,12 @@ export default async function AccountOrdersPage() {
                     <dd>{order.tracking_number ?? "Not available"}</dd>
                   </div>
                 </dl>
+                <Link
+                  className="outline-button"
+                  href={`/account/orders/${encodeURIComponent(order.id)}`}
+                >
+                  View order
+                </Link>
               </article>
             ))}
           </div>

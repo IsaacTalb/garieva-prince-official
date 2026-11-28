@@ -7,5 +7,5 @@ export const mediaInputSchema = z.strictObject({
   byteLength: z.number().int().positive().max(10 * 1024 * 1024),
 });
 
-export const privateObjectKeySchema = z.string().regex(/^(order|profile)\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp|avif)$/);
+export const privateObjectKeySchema = z.string().regex(/^(order|profile)\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(pdf|jpg|png|webp|avif)$/);
 export type MediaInput = z.infer<typeof mediaInputSchema>;

@@ -5,7 +5,7 @@ import { isDatabaseConfigured } from "@/lib/db/d1/client";
 import { PageIntro } from "@/components/shared/page-intro";
 import { EmptyState } from "@/components/shared/empty-state";
 
-const sections: Record<string, string> = { categories: "Categories", collections: "Collections", drops: "New Drops", products: "Products", inventory: "Inventory", nfc: "NFC inventory", orders: "Orders", customers: "Customers", payments: "Payments", coupons: "Coupons", settings: "Website Settings", admins: "Admins", users: "Users" };
+const sections: Record<string, string> = { categories: "Categories", collections: "Collections", drops: "New Drops", products: "Products", inventory: "Inventory", nfc: "NFC inventory", orders: "Orders", customers: "Customers", payments: "Payments", resale: "Resale marketplace", coupons: "Coupons", settings: "Website Settings", admins: "Admins", users: "Users" };
 
 export default async function AdminSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params;
