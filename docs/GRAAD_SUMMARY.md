@@ -263,10 +263,14 @@ will provide physical reader provisioning; it is not simulated here.
 - Public passport displays owner avatar/name/username/socials only when profile and wardrobe visibility are enabled
 - Concurrency and replay behavior is covered by database integration tests
 
-### 📋 Phase 12 — Ownership Transfer
-- Resale marketplace listings
-- Transfer workflow with atomic ownership swap
-- Seller payout after delivery confirmed
+### ✅ Phase 12 — Ownership Transfer (Local implementation; production migration pending)
+- Added existing-account-only transfer requests from the current owner's wardrobe
+- Recipient accepts while signed in; sender confirms and completes the transfer
+- Ownership remains with the sender until the atomic completion transaction
+- Completion preserves the garment status and NFC association and audits the handoff
+- Requests expire after seven days; cancellation, duplicate initiation, and replay are covered by tests
+- Apply migration `0008_ownership_transfers.sql` to production D1 before deploying/enabling this flow
+- Marketplace listings and seller payouts remain out of scope for this phase
 
 ### 📋 Phase 13 — Resale Marketplace (Partially Started)
 - Complete resale listing UI

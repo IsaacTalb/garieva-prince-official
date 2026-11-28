@@ -3,13 +3,13 @@
 **Project**: Garieva Prince Official  
 **GitHub**: https://github.com/IsaacTalb/garieva-prince-official  
 **Repository Owner**: Isaac Talb (<thaungahlaybaw@gmail.com>)  
-**Last Updated**: 2026-11-19  
+**Last Updated**: 2026-11-28
 
 ---
 
-## Current Status: Phase 8 Complete; Deployment Verification Pending
+## Current Status: Phase 12 Implemented Locally; Production Migration Pending
 
-### Phases Completed: **1-9/18**
+### Phases Implemented: **1-9, 11-12**
 
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
@@ -24,8 +24,10 @@
 | 9 | NFC Digital Passport Foundation | ✅ Complete | Public garment passport, verification boundary, replay-counter storage, admin inventory |
 | 10 | NFC Admin Provisioning | 🚧 Scaffold | Item selection, checklist, explicit disconnected-reader adapter; hardware/SDM work pending |
 | 11 | Ownership Claim | ✅ Implemented | Authenticated code claim, atomic D1 ownership assignment, audit event, public owner visibility |
+| 12 | Ownership Transfer | ✅ Implemented locally | Existing-account recipient acceptance, sender confirmation, atomic ownership swap, expiry and audit |
 
-**Current Phase**: Phase 12 — Ownership Transfer
+**Current Phase**: Phase 12 implementation is complete locally. Apply migration
+`0008_ownership_transfers.sql` to production D1 before enabling transfers there.
 
 Phase 9 does not implement NTAG 424 DNA cryptography. Tag verification remains
 `UNVERIFIED` until the physical-tag verifier and managed key infrastructure are
@@ -44,6 +46,9 @@ returns successfully, and a read-only query to `garieva-prince-prod` succeeds.
 The custom domain still reports D1 as unbound, so it has not been cut over.
 Sign-up/OTP delivery, authenticated admin workflows, R2 writes, and production
 email delivery have not yet been end-to-end tested.
+Phase 12 has not been applied to production D1 or deployed. Transfers require
+the recipient to have an existing account; requests expire after seven days.
+The item status and NFC association remain unchanged during transfer.
 
 ---
 
@@ -70,7 +75,7 @@ email delivery have not yet been end-to-end tested.
 - `ownership_claim_codes.ts` - Claim code management (Phase 7)
 - `client.ts` - D1 client abstraction
 
-### Schema Migrations: **7 Files**
+### Schema Migrations: **8 Files**
 
 - `0001_core.sql` - Core schema (users, products, NFC, ownerships)
 - `0002_categories.sql` - Categories hierarchy
@@ -79,6 +84,7 @@ email delivery have not yet been end-to-end tested.
 - `0005_ownership_claim_codes.sql` - Claim codes table (Phase 7)
 - `0006_payment_approvals.sql` - Payment approvals tracking (Phase 7)
 - `0007_nfc_verification_events.sql` - Public wardrobe consent and replay counters (Phase 9)
+- `0008_ownership_transfers.sql` - Ownership transfer lifecycle and active-transfer constraints (Phase 12)
 
 ### Authentication: **Custom D1-backed Sessions**
 

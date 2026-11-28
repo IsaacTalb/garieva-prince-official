@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageIntro } from "@/components/shared/page-intro";
 import { requirePageUser } from "@/lib/auth/session";
 import { getUserWardrobe } from "@/lib/db/d1/ownership";
+import { TransferOwnershipForm } from "@/components/ownership/ownership-transfer-controls";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My wardrobe" };
@@ -42,6 +43,7 @@ export default async function AccountWardrobePage() {
                   <div><dt>Ownership started</dt><dd>{item.owned_since}</dd></div>
                   <div><dt>NFC tag</dt><dd>{item.nfc_status ?? "Not linked"}</dd></div>
                 </dl>
+                <TransferOwnershipForm publicId={item.public_id} />
               </article>
             ))}
           </div>

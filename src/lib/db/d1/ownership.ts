@@ -4,6 +4,7 @@ import { appUserSchema, type AppUser } from "@/schemas/user";
 
 export type WardrobeItem = {
   product_item_id: string;
+  public_id: string;
   product_name: string;
   product_slug: string;
   serial_number: string;
@@ -19,6 +20,7 @@ export async function getUserWardrobe(userId: string): Promise<WardrobeItem[]> {
   const rows = await db`
     SELECT
       pi.id AS product_item_id,
+      pi.public_id,
       p.name AS product_name,
       p.slug AS product_slug,
       pi.serial_number,
@@ -37,6 +39,7 @@ export async function getUserWardrobe(userId: string): Promise<WardrobeItem[]> {
   `;
   return rows.map((row) => ({
     product_item_id: String(row.product_item_id),
+    public_id: String(row.public_id),
     product_name: String(row.product_name),
     product_slug: String(row.product_slug),
     serial_number: String(row.serial_number),

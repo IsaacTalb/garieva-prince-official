@@ -141,6 +141,16 @@ dialog::backdrop { background: #00000055; backdrop-filter: blur(3px); }
 .account-record-list { display: grid; gap: 16px; }
 .account-record { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; }
 .account-record h2 { text-transform: capitalize; }
+.transfer-sections { display: grid; gap: 36px; }
+.transfer-sections section { display: grid; gap: 16px; }
+.transfer-sections h2 { margin: 0; font-size: 20px; }
+.transfer-card { display: grid; gap: 8px; }
+.transfer-card h3,.transfer-card p { margin: 0; }
+.transfer-ownership-form { display: grid; flex: 1 1 100%; gap: 10px; max-width: 520px; }
+.transfer-ownership-form label { font-size: 13px; font-weight: 500; }
+.transfer-ownership-form input { min-height: 42px; width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+.ownership-transfer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ownership-transfer-actions .form-message,.transfer-ownership-form .form-message { margin: 0; }
 .account-record dl { display: grid; grid-template-columns: repeat(2,minmax(120px,1fr)); gap: 16px; margin: 0; }
 .account-record dt { color: var(--muted); font-size: 12px; }
 .account-record dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 14px; }
